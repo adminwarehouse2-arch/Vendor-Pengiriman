@@ -1,324 +1,1018 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Logistics Armada Dashboard</title>
-  <!-- Tailwind CSS & FontAwesome -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <!-- PapaParse untuk parsing CSV -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-</head>
-<body class="bg-slate-100 text-slate-800 font-sans min-h-screen pb-12">
-
-  <!-- HEADER -->
-  <header class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-      <div class="flex items-center space-x-3">
-        <i class="fa-solid fa-truck-ramp-box text-2xl text-amber-400"></i>
-        <div>
-          <h1 class="text-xl font-bold tracking-wide">Logistics Armada Dashboard</h1>
-          <p class="text-xs text-indigo-200">Sheet: Jadwal Harian | Auto-Sync & Slide Per Tanggal</p>
-        </div>
-      </div>
-
-      <button onclick="fetchSheetData()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold px-4 py-2 rounded-lg text-sm transition flex items-center gap-2 shadow">
-        <i class="fa-solid fa-rotate"></i> Sync / Refresh Data
-      </button>
-    </div>
-  </header>
-
-  <main class="max-w-7xl mx-auto px-4 mt-6">
-
-    <!-- FILTER & SEARCH BAR -->
-    <section class="bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <!-- Search -->
-        <div>
-          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Cari Route / Customer</label>
-          <div class="relative">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
-            <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Ketik nama customer / daerah..." class="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          </div>
-        </div>
-
-        <!-- Filter Armada -->
-        <div>
-          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Armada</label>
-          <select id="armadaFilter" onchange="applyFilters()" class="w-full py-2 px-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="ALL">Semua Armada</option>
-          </select>
-        </div>
-
-        <!-- Filter Daerah -->
-        <div>
-          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Filter Daerah</label>
-          <select id="daerahFilter" onchange="applyFilters()" class="w-full py-2 px-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <option value="ALL">Semua Daerah</option>
-          </select>
-        </div>
-
-        <!-- Reset Button -->
-        <div class="flex items-end">
-          <button onclick="resetFilters()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-lg text-sm font-medium transition">
-            <i class="fa-solid fa-filter-circle-xmark mr-1"></i> Reset Filter
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- SLIDE NAVIGATOR PER TANGGAL -->
-    <section class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
-      <div class="flex items-center space-x-2">
-        <button onclick="slideDate(-1)" class="bg-white border border-slate-300 hover:bg-indigo-600 hover:text-white text-slate-700 px-3 py-2 rounded-lg shadow-sm transition text-sm font-semibold">
-          <i class="fa-solid fa-chevron-left mr-1"></i> Tanggal Sebelumnya
-        </button>
-        <button onclick="slideDate(1)" class="bg-white border border-slate-300 hover:bg-indigo-600 hover:text-white text-slate-700 px-3 py-2 rounded-lg shadow-sm transition text-sm font-semibold">
-          Tanggal Selanjutnya <i class="fa-solid fa-chevron-right ml-1"></i>
-        </button>
-      </div>
-
-      <!-- Indicator Tanggal Aktif -->
-      <div class="text-center">
-        <span class="text-xs uppercase font-bold text-indigo-500 tracking-wider block">Menampilkan Tanggal</span>
-        <span id="currentDateDisplay" class="text-xl font-extrabold text-indigo-900">Memuat Data...</span>
-      </div>
-
-      <!-- Direct Date Picker -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-bold text-slate-600">Pilih Tanggal:</span>
-        <select id="dateSelect" onchange="onDateSelectChange(this.value)" class="py-1.5 px-3 border border-indigo-300 rounded-lg text-sm bg-white font-semibold text-indigo-900 focus:outline-none">
-        </select>
-      </div>
-    </section>
-
-    <!-- CONTAINER DISPLAY CARDS ARMADA -->
-    <section id="armadaContainer" class="space-y-8"></section>
-
-  </main>
-
-  <script>
-    // Link CSV Publik dari Google Sheets Anda
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRODXlIejqUwv-swzdvmy4N96ua0xpGcjAGs6GQ-vzNCZ49EYUikWUbJqSrkfbP1qeVspfW9Sr5IBgJ/pub?gid=350332557&single=true&output=csv";
-
-    let rawData = [];
-    let datesList = [];
-    let currentDateIndex = 0;
-
-    window.addEventListener('DOMContentLoaded', fetchSheetData);
-
-    function fetchSheetData() {
-      const container = document.getElementById('armadaContainer');
-      container.innerHTML = `
-        <div class="text-center py-12">
-          <i class="fa-solid fa-spinner fa-spin text-4xl text-indigo-600 mb-3"></i>
-          <p class="text-slate-600 font-medium">Mengambil data dari Google Sheets Jadwal Harian...</p>
-        </div>`;
-
-      Papa.parse(CSV_URL, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          if (results.data && results.data.length > 0) {
-            processRawData(results.data);
-          } else {
-            showError();
-          }
-        },
-        error: function() {
-          showError();
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiMap ID - Sistem Informasi & Manajemen Logistik Indonesia</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        #map { height: calc(100vh - 220px); min-height: 440px; width: 100%; border-radius: 0.75rem; }
+        .leaflet-container { background: #0f172a !important; }
+        .leaflet-popup-content-wrapper {
+            background: #1e293b;
+            color: #f8fafc;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
+            padding: 4px;
         }
-      });
-    }
+        .leaflet-popup-tip { background: #1e293b; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
 
-    function showError() {
-      document.getElementById('armadaContainer').innerHTML = `
-        <div class="bg-red-50 border border-red-200 text-red-700 p-6 rounded-xl text-center">
-          <i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i>
-          <p class="font-bold">Gagal mengambil data dari Google Sheets!</p>
-          <p class="text-sm mt-1">Pastikan Sheet sudah di-Publish to Web dengan format CSV.</p>
-        </div>`;
-    }
-
-    function processRawData(data) {
-      rawData = data.map(item => ({
-        Tanggal: (item['Tanggal'] || '').trim(),
-        Customer: (item['Customer'] || '').trim(),
-        Armada: (item['Armada'] || 'Lainnya').trim(),
-        Daerah: (item['Daerah'] || '-').trim(),
-        TotalDokumen: (item['Total Dokumen'] || '0').trim(),
-        TotalBerat: parseInt((item['Total berat'] || '0').replace(/[^0-9]/g, '')) || 0,
-        Cost: parseInt((item['Cost'] || '0').replace(/[^0-9]/g, '')) || 0
-      })).filter(row => row.Tanggal !== '' && row.Customer !== '' && row.Tanggal !== 'Tanggal');
-
-      datesList = [...new Set(rawData.map(item => item.Tanggal))];
-      populateFilters();
-
-      if (datesList.length > 0) {
-        currentDateIndex = 0;
-        renderDashboard();
-      } else {
-        document.getElementById('armadaContainer').innerHTML = `
-          <div class="bg-amber-50 p-6 rounded-xl border border-amber-200 text-center text-amber-800">
-            Tidak ada baris data valid yang ditemukan pada sheet.
-          </div>`;
-      }
-    }
-
-    function populateFilters() {
-      const armadas = [...new Set(rawData.map(i => i.Armada))].filter(Boolean);
-      const daerahs = [...new Set(rawData.map(i => i.Daerah))].filter(Boolean);
-
-      const armadaSelect = document.getElementById('armadaFilter');
-      armadaSelect.innerHTML = '<option value="ALL">Semua Armada</option>';
-      armadas.forEach(a => armadaSelect.innerHTML += `<option value="${a}">${a}</option>`);
-
-      const daerahSelect = document.getElementById('daerahFilter');
-      daerahSelect.innerHTML = '<option value="ALL">Semua Daerah</option>';
-      daerahs.forEach(d => daerahSelect.innerHTML += `<option value="${d}">${d}</option>`);
-
-      const dateSelect = document.getElementById('dateSelect');
-      dateSelect.innerHTML = '';
-      datesList.forEach((dt, idx) => {
-        dateSelect.innerHTML += `<option value="${idx}">${dt}</option>`;
-      });
-    }
-
-    function renderDashboard() {
-      const selectedDate = datesList[currentDateIndex];
-      document.getElementById('currentDateDisplay').innerText = selectedDate || '-';
-      document.getElementById('dateSelect').value = currentDateIndex;
-
-      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-      const armadaFilter = document.getElementById('armadaFilter').value;
-      const daerahFilter = document.getElementById('daerahFilter').value;
-
-      let filtered = rawData.filter(item => item.Tanggal === selectedDate);
-
-      if (armadaFilter !== 'ALL') filtered = filtered.filter(i => i.Armada === armadaFilter);
-      if (daerahFilter !== 'ALL') filtered = filtered.filter(i => i.Daerah === daerahFilter);
-      if (searchTerm) {
-        filtered = filtered.filter(i => 
-          i.Customer.toLowerCase().includes(searchTerm) || 
-          i.Daerah.toLowerCase().includes(searchTerm)
-        );
-      }
-
-      const grouped = {};
-      filtered.forEach(item => {
-        if (!grouped[item.Armada]) grouped[item.Armada] = [];
-        grouped[item.Armada].push(item);
-      });
-
-      const container = document.getElementById('armadaContainer');
-      container.innerHTML = '';
-
-      const armadaKeys = Object.keys(grouped);
-      if (armadaKeys.length === 0) {
-        container.innerHTML = `
-          <div class="bg-white p-8 rounded-xl shadow text-center text-slate-500">
-            <i class="fa-solid fa-box-open text-3xl mb-2 text-slate-300"></i>
-            <p>Tidak ada rute/armada pada kriteria tanggal dan filter ini.</p>
-          </div>`;
-        return;
-      }
-
-      armadaKeys.forEach(armadaName => {
-        const items = grouped[armadaName];
-        let totalBeratArmada = 0;
-        let totalCostArmada = 0;
-
-        items.forEach(i => {
-          totalBeratArmada += i.TotalBerat;
-          totalCostArmada += i.Cost;
-        });
-
-        let rowsHtml = '';
-        items.forEach((item, index) => {
-          rowsHtml += `
-            <tr class="hover:bg-slate-50 transition border-b border-slate-100 text-sm">
-              <td class="py-3 px-4 font-medium text-slate-400">${index + 1}</td>
-              <td class="py-3 px-4 font-bold text-slate-800">${item.Customer}</td>
-              <td class="py-3 px-4 text-slate-600">${item.Daerah}</td>
-              <td class="py-3 px-4 text-center">${item.TotalDokumen}</td>
-              <td class="py-3 px-4 text-right">${item.TotalBerat.toLocaleString('id-ID')} gr</td>
-              <td class="py-3 px-4 text-right font-semibold text-emerald-600">
-                ${item.Cost > 0 ? 'Rp ' + item.Cost.toLocaleString('id-ID') : '-'}
-              </td>
-            </tr>`;
-        });
-
-        const cardHtml = `
-          <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden mb-6">
-            <div class="bg-slate-800 text-white px-6 py-3 flex justify-between items-center">
-              <div class="flex items-center space-x-3">
-                <span class="bg-indigo-500 text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider">
-                  <i class="fa-solid fa-truck"></i> ${armadaName}
-                </span>
-                <span class="text-sm text-slate-300 font-medium">Tanggal: ${selectedDate}</span>
-              </div>
-              <div class="text-right">
-                <span class="text-xs text-slate-400 block">Total Cost Armada</span>
-                <span class="text-lg font-extrabold text-amber-400">Rp ${totalCostArmada.toLocaleString('id-ID')}</span>
-              </div>
+    <!-- Header / Navbar -->
+    <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('map')">
+                <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-map-location-dot text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-none text-white tracking-tight">LogiMap ID</h1>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Peta & Dashboard Manajemen Ekspedisi Indonesia</p>
+                </div>
             </div>
 
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider border-b">
-                    <th class="py-2.5 px-4">No</th>
-                    <th class="py-2.5 px-4">Customer / Rute</th>
-                    <th class="py-2.5 px-4">Daerah</th>
-                    <th class="py-2.5 px-4 text-center">Dokumen</th>
-                    <th class="py-2.5 px-4 text-right">Berat (gr)</th>
-                    <th class="py-2.5 px-4 text-right">Cost</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${rowsHtml}
-                </tbody>
-                <tfoot>
-                  <tr class="bg-slate-50 font-bold border-t text-sm">
-                    <td colspan="3" class="py-3 px-4 text-slate-700 text-right">Total ${armadaName}:</td>
-                    <td class="py-3 px-4 text-center">${items.reduce((a,b)=>a+parseInt(b.TotalDokumen||0), 0)}</td>
-                    <td class="py-3 px-4 text-right">${totalBeratArmada.toLocaleString('id-ID')} gr</td>
-                    <td class="py-3 px-4 text-right text-emerald-700">Rp ${totalCostArmada.toLocaleString('id-ID')}</td>
-                  </tr>
-                </tfoot>
-              </table>
+            <!-- Navigation Tabs -->
+            <nav class="hidden md:flex space-x-1 bg-slate-900/80 p-1 rounded-xl border border-slate-700/80 text-xs sm:text-sm font-medium">
+                <button id="tab-map-btn" onclick="switchTab('map')" class="px-3.5 py-1.5 rounded-lg transition-all bg-indigo-600 text-white shadow">
+                    <i class="fa-solid fa-earth-asia mr-1.5"></i>Peta Tarif
+                </button>
+                <button id="tab-catalog-btn" onclick="switchTab('catalog')" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-boxes-packing mr-1.5"></i>Direktori Vendor
+                </button>
+                <button id="tab-admin-btn" onclick="switchTab('admin')" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-pen-to-square mr-1.5"></i>Input & Kelola Data
+                </button>
+                <button id="tab-data-btn" onclick="switchTab('data')" class="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all">
+                    <i class="fa-solid fa-database mr-1.5"></i>Backup / Reset
+                </button>
+            </nav>
+
+            <!-- Mobile Menu Dropdown Toggle -->
+            <div class="md:hidden flex items-center">
+                <button onclick="toggleMobileMenu()" class="p-2 text-slate-300 hover:text-white bg-slate-800 rounded-lg border border-slate-700">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
             </div>
-          </div>`;
+        </div>
 
-        container.innerHTML += cardHtml;
-      });
-    }
+        <!-- Mobile Navigation Drawer -->
+        <div id="mobile-menu" class="hidden md:hidden bg-slate-800 border-b border-slate-700 px-4 py-3 space-y-2 text-sm font-medium">
+            <button onclick="switchTab('map'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg bg-indigo-600 text-white">
+                <i class="fa-solid fa-earth-asia mr-2"></i>Peta & Rate Kiriman
+            </button>
+            <button onclick="switchTab('catalog'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700">
+                <i class="fa-solid fa-boxes-packing mr-2"></i>Direktori Vendor
+            </button>
+            <button onclick="switchTab('admin'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700">
+                <i class="fa-solid fa-pen-to-square mr-2"></i>Input & Kelola Data
+            </button>
+            <button onclick="switchTab('data'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700">
+                <i class="fa-solid fa-database mr-2"></i>Backup & Reset Data
+            </button>
+        </div>
+    </header>
 
-    function slideDate(direction) {
-      if (datesList.length === 0) return;
-      currentDateIndex += direction;
-      if (currentDateIndex < 0) currentDateIndex = datesList.length - 1;
-      if (currentDateIndex >= datesList.length) currentDateIndex = 0;
-      renderDashboard();
-    }
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col">
 
-    function onDateSelectChange(val) {
-      currentDateIndex = parseInt(val);
-      renderDashboard();
-    }
+        <!-- Global Toast Alert Container -->
+        <div id="toast-container" class="fixed top-20 right-5 z-50 space-y-2 pointer-events-none"></div>
 
-    function applyFilters() {
-      renderDashboard();
-    }
+        <!-- TAB 1: PETA & KALKULATOR TARIF WILAYAH -->
+        <div id="view-map" class="space-y-4 flex-1 flex flex-col">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+                
+                <!-- Map Container -->
+                <div class="lg:col-span-2 flex flex-col bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-xl">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-location-dot text-indigo-400"></i>
+                            <h2 class="font-bold text-slate-100 text-sm sm:text-base">Peta Batas Wilayah Indonesia</h2>
+                        </div>
+                        <div class="text-xs text-slate-400 flex items-center space-x-3">
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500 mr-1.5"></span> Ada Tarif</span>
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-slate-600 mr-1.5"></span> Belum Ada Data</span>
+                        </div>
+                    </div>
 
-    function resetFilters() {
-      document.getElementById('searchInput').value = '';
-      document.getElementById('armadaFilter').value = 'ALL';
-      document.getElementById('daerahFilter').value = 'ALL';
-      renderDashboard();
-    }
-  </script>
+                    <!-- Map Canvas -->
+                    <div id="map" class="rounded-xl border border-slate-700/60 flex-1"></div>
+                </div>
+
+                <!-- Logistics Detail Panel -->
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 flex flex-col shadow-xl max-h-[750px]">
+                    
+                    <!-- Region Title Header -->
+                    <div class="border-b border-slate-700/80 pb-3 mb-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <span id="selected-region-tag" class="text-[10px] uppercase font-bold tracking-wider text-indigo-400 bg-indigo-950/80 px-2.5 py-0.5 rounded border border-indigo-800">
+                                Wilayah Terpilih
+                            </span>
+                            <span id="expedition-count-badge" class="text-xs font-semibold bg-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full">0 Layanan</span>
+                        </div>
+                        <h2 id="region-title" class="text-xl font-black text-white">Pilih Provinsi di Peta</h2>
+                        <p id="region-subtitle" class="text-xs text-slate-400 mt-0.5">Klik area pulau/provinsi (misal: Kalimantan Selatan, Bali) untuk melihat opsi ekspedisi.</p>
+                    </div>
+
+                    <!-- Calculator Weight & Filter Controls -->
+                    <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-700/80 space-y-2 mb-3">
+                        <div class="flex items-center justify-between text-xs font-semibold text-slate-300">
+                            <label for="package-weight" class="flex items-center"><i class="fa-solid fa-weight-hanging text-amber-400 mr-1.5"></i>Berat Paket (Kg):</label>
+                            <span id="weight-display" class="text-indigo-400 font-bold">1 Kg</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="number" id="package-weight" value="1" min="0.1" step="0.5" oninput="updateCalculatedPrices()" class="w-24 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white text-center font-bold focus:outline-none focus:border-indigo-500">
+                            <input type="range" id="weight-slider" min="1" max="50" value="1" oninput="syncWeightInputs(this.value)" class="w-full accent-indigo-500 h-1.5 bg-slate-700 rounded-lg cursor-pointer">
+                        </div>
+
+                        <!-- Search & Sort Filter -->
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <input type="text" id="search-courier" onkeyup="filterCouriers()" placeholder="Cari kurir / layanan..." class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                            <select id="sort-courier" onchange="filterCouriers()" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                                <option value="default">Urutkan</option>
+                                <option value="price-asc">Harga: Termurah</option>
+                                <option value="price-desc">Harga: Termahal</option>
+                                <option value="eta-asc">ETA: Tercepat</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Rate Items List -->
+                    <div id="courier-list" class="space-y-2.5 overflow-y-auto pr-1 flex-1">
+                        <div class="text-center py-16 px-4 text-slate-500">
+                            <i class="fa-solid fa-hand-pointer text-4xl mb-3 text-slate-600 animate-bounce"></i>
+                            <p class="text-xs">Klik salah satu wilayah pada peta untuk menampilkan daftar jasa ekspedisi & perhitungan ongkir.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: DIREKTORI VENDOR / EKSPEDISI -->
+        <div id="view-catalog" class="hidden space-y-6">
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center"><i class="fa-solid fa-boxes-packing text-indigo-400 mr-2"></i>Direktori Jasa Ekspedisi Terdaftar</h2>
+                    <p class="text-xs text-slate-400 mt-1">Daftar lengkap vendor penyedia jasa kirim yang telah diinput ke dalam sistem.</p>
+                </div>
+                <button onclick="switchTab('admin'); prepareNewVendorForm()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center">
+                    <i class="fa-solid fa-plus mr-1.5"></i>Tambah Vendor Baru
+                </button>
+            </div>
+
+            <!-- Vendor Grid Container -->
+            <div id="catalog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Populated via JS -->
+            </div>
+        </div>
+
+        <!-- TAB 3: ADMIN & INPUT MANAGEMENT -->
+        <div id="view-admin" class="hidden space-y-6">
+            
+            <!-- Management Mode Tabs -->
+            <div class="flex border-b border-slate-700 text-sm font-semibold space-x-6">
+                <button id="subtab-rate-btn" onclick="switchAdminSubtab('rate')" class="pb-3 border-b-2 border-indigo-500 text-indigo-400 flex items-center">
+                    <i class="fa-solid fa-calculator mr-2"></i>Input & Kelola Tarif Kiriman
+                </button>
+                <button id="subtab-vendor-btn" onclick="switchAdminSubtab('vendor')" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center">
+                    <i class="fa-solid fa-truck-field mr-2"></i>Kelola Profil Vendor / Ekspedisi
+                </button>
+            </div>
+
+            <!-- SUBTAB 1: MANAGING RATES PER REGION -->
+            <div id="admin-subtab-rate" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Form Input Rate -->
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
+                    <h3 id="rate-form-title" class="text-base font-bold text-white mb-4 flex items-center">
+                        <i class="fa-solid fa-circle-plus text-emerald-400 mr-2"></i>Tambah Tarif Wilayah Baru
+                    </h3>
+
+                    <form id="rate-form" onsubmit="handleRateFormSubmit(event)" class="space-y-3.5 text-xs">
+                        <input type="hidden" id="rate-edit-id" value="">
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Pilih Provinsi / Region Target *</label>
+                            <select id="rate-region-select" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                                <!-- Populated via JS -->
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Pilih Vendor Ekspedisi *</label>
+                            <select id="rate-vendor-select" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                                <!-- Populated via JS -->
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Nama Layanan (Contoh: REG, YES, Cargo) *</label>
+                            <input type="text" id="rate-service-name" placeholder="Misal: EZ Reguler / JTR Cargo" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-slate-300 font-semibold mb-1">Harga Dasar / Kg (Rp) *</label>
+                                <input type="number" id="rate-price" placeholder="25000" min="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 font-semibold mb-1">Estimasi ETA *</label>
+                                <input type="text" id="rate-eta" placeholder="2-3 Hari" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Cakupan Wilayah / Catatan Tambahan</label>
+                            <input type="text" id="rate-coverage" placeholder="Misal: Banjarmasin, Banjarbaru, Martapura" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div class="flex space-x-2 pt-2">
+                            <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-600/20">
+                                <i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Tarif
+                            </button>
+                            <button type="button" onclick="resetRateForm()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-2.5 rounded-xl font-medium">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Existing Rates List Table -->
+                <div class="lg:col-span-2 bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-base font-bold text-white"><i class="fa-solid fa-list-check text-indigo-400 mr-2"></i>Daftar Tarif Terdaftar</h3>
+                        <input type="text" id="filter-admin-rates" onkeyup="renderAdminRatesTable()" placeholder="Filter data tarif..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900/90 text-slate-400 uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th class="p-2.5">Region</th>
+                                    <th class="p-2.5">Vendor & Layanan</th>
+                                    <th class="p-2.5">Tarif / Kg</th>
+                                    <th class="p-2.5">ETA</th>
+                                    <th class="p-2.5 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-rates-tbody" class="divide-y divide-slate-700/60">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBTAB 2: MANAGING VENDORS -->
+            <div id="admin-subtab-vendor" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Vendor Form -->
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl">
+                    <h3 id="vendor-form-title" class="text-base font-bold text-white mb-4 flex items-center">
+                        <i class="fa-solid fa-truck-arrow-right text-indigo-400 mr-2"></i>Tambah Vendor Baru
+                    </h3>
+
+                    <form id="vendor-form" onsubmit="handleVendorFormSubmit(event)" class="space-y-3.5 text-xs">
+                        <input type="hidden" id="vendor-edit-id" value="">
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Nama Vendor / Ekspedisi *</label>
+                            <input type="text" id="vendor-name" placeholder="Misal: JNE Express / SiCepat" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Tagline / Slogan</label>
+                            <input type="text" id="vendor-tagline" placeholder="Misal: Express Across Nations" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Ikon FontAwesome (Opsional)</label>
+                            <input type="text" id="vendor-icon" placeholder="fa-truck-fast" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Nomor Call Center / WA</label>
+                            <input type="text" id="vendor-phone" placeholder="0811-123-456 / 1500161" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Link Tracking / Web Resmi</label>
+                            <input type="url" id="vendor-website" placeholder="https://www.jne.co.id" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-slate-300 font-semibold mb-1">Deskripsi Vendor</label>
+                            <textarea id="vendor-desc" rows="3" placeholder="Penjelasan profil vendor..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+                        </div>
+
+                        <div class="flex space-x-2 pt-2">
+                            <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/20">
+                                <i class="fa-solid fa-floppy-disk mr-1.5"></i>Simpan Vendor
+                            </button>
+                            <button type="button" onclick="resetVendorForm()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-2.5 rounded-xl font-medium">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Vendor Table -->
+                <div class="lg:col-span-2 bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 shadow-xl flex flex-col">
+                    <h3 class="text-base font-bold text-white mb-4"><i class="fa-solid fa-boxes-stacked text-indigo-400 mr-2"></i>Daftar Vendor Terdaftar</h3>
+
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900/90 text-slate-400 uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th class="p-2.5">Vendor</th>
+                                    <th class="p-2.5">Tagline</th>
+                                    <th class="p-2.5">Kontak</th>
+                                    <th class="p-2.5 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-vendor-tbody" class="divide-y divide-slate-700/60">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: DATA MANAGEMENT & BACKUP -->
+        <div id="view-data" class="hidden space-y-6">
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-6 max-w-4xl mx-auto shadow-xl">
+                <h2 class="text-xl font-bold text-white mb-2 flex items-center">
+                    <i class="fa-solid fa-database text-indigo-400 mr-2.5"></i>Manajemen Database & Backup JSON
+                </h2>
+                <p class="text-xs text-slate-400 mb-6">Seluruh data tersimpan secara otomatis di browser Anda (LocalStorage). Anda dapat mengekspor atau mengimpor file backup JSON agar data tidak hilang saat berpindah perangkat.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    <!-- Backup Export -->
+                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-700/80 flex flex-col justify-between">
+                        <div>
+                            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center text-lg mb-3">
+                                <i class="fa-solid fa-download"></i>
+                            </div>
+                            <h3 class="font-bold text-slate-200 text-sm mb-1">Export Backup JSON</h3>
+                            <p class="text-[11px] text-slate-400 mb-4">Unduh semua data vendor & rate tarif ke file .json.</p>
+                        </div>
+                        <button onclick="exportDataJSON()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 rounded-xl transition-all">
+                            Export File JSON
+                        </button>
+                    </div>
+
+                    <!-- Import Backup -->
+                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-700/80 flex flex-col justify-between">
+                        <div>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg mb-3">
+                                <i class="fa-solid fa-upload"></i>
+                            </div>
+                            <h3 class="font-bold text-slate-200 text-sm mb-1">Import File JSON</h3>
+                            <p class="text-[11px] text-slate-400 mb-4">Pulihkan data dari file backup JSON sebelumnya.</p>
+                        </div>
+                        <label class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2 rounded-xl transition-all text-center cursor-pointer block">
+                            Pilih File JSON
+                            <input type="file" id="import-file-input" accept=".json" onchange="importDataJSON(event)" class="hidden">
+                        </label>
+                    </div>
+
+                    <!-- Reset Preset -->
+                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-700/80 flex flex-col justify-between">
+                        <div>
+                            <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-lg mb-3">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </div>
+                            <h3 class="font-bold text-slate-200 text-sm mb-1">Reset Data Sample</h3>
+                            <p class="text-[11px] text-slate-400 mb-4">Kembalikan database ke data bawaan pabrik (Preset Sample).</p>
+                        </div>
+                        <button onclick="resetToSampleData()" class="w-full bg-slate-700 hover:bg-rose-600 text-slate-200 hover:text-white text-xs font-semibold py-2 rounded-xl transition-all">
+                            Reset ke Preset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800/80 border-t border-slate-700/80 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            &copy; 2026 LogiMap ID - Standalone Dynamic Logistics Dashboard. Data stored locally in browser.
+        </div>
+    </footer>
+
+    <!-- Application Script -->
+    <script>
+        // List of Provinces in Indonesia for Dropdown Selection
+        const indonesiaProvinces = [
+            "Aceh", "Bali", "Banten", "Bengkulu", "DI Yogyakarta", "DKI Jakarta", 
+            "Gorontalo", "Jambi", "Jawa Barat", "Jawa Tengah", "Jawa Timur", 
+            "Kalimantan Barat", "Kalimantan Selatan", "Kalimantan Tengah", "Kalimantan Timur", "Kalimantan Utara",
+            "Kepulauan Bangka Belitung", "Kepulauan Riau", "Lampung", "Maluku", "Maluku Utara",
+            "Nusa Tenggara Barat", "Nusa Tenggara Timur", "Papua", "Papua Barat", "Papua Pegunungan",
+            "Papua Selatan", "Papua Tengah", "Riau", "Sulawesi Barat", "Sulawesi Selatan",
+            "Sulawesi Tengah", "Sulawesi Tenggara", "Sulawesi Utara", "Sumatera Barat", "Sumatera Selatan", "Sumatera Utara"
+        ];
+
+        // Sample Default Vendors Preset
+        const defaultVendors = [
+            { id: "v1", name: "JNE Express", tagline: "Express Across Nations", icon: "fa-truck-fast", phone: "(021) 29278888", website: "https://www.jne.co.id", desc: "Jaringan ekspedisi terbesar dengan layanan Reguler, YES (Yakin Esok Sampai), dan JTR (JNE Trucking Cargo)." },
+            { id: "v2", name: "J&T Express", tagline: "Express Your Online Business", icon: "fa-bolt", phone: "0811-123-456", website: "https://jet.co.id", desc: "Operasional 365 hari tanpa libur dengan layanan unggulan EZ Reguler dan J&T Cargo." },
+            { id: "v3", name: "SiCepat Ekspres", tagline: "Ketika Semua Jadi Mudah", icon: "fa-gauge-high", phone: "021-50200050", website: "https://www.sicepat.com", desc: "Kecepatan pengiriman konsisten dengan pilihan SIUNTUNT dan GOKIL (Cargo Kiloan)." },
+            { id: "v4", name: "Pos Indonesia", tagline: "Juara Pengiriman Nusantara", icon: "fa-envelope-open-text", phone: "1500161", website: "https://www.posindonesia.co.id", desc: "BUMN Logistik dengan jangkauan terlengkap hingga pelosok desa dan pulau terluar." },
+            { id: "v5", name: "Anteraja", tagline: "Satu Cepat Pasti Mantap", icon: "fa-motorcycle", phone: "021-50603333", website: "https://anteraja.id", desc: "Layanan kurir cerdas berbasis teknologi untuk pengiriman e-commerce hemat dan cepat." },
+            { id: "v6", name: "Indah Cargo", tagline: "Ahlinya Kargo & Barang Besar", icon: "fa-boxes-stacked", phone: "0811-800-123", website: "https://indahonline.com", desc: "Spesialis pengiriman kargo darat, laut, dan udara untuk partai besar di atas 10kg." }
+        ];
+
+        // Sample Default Regional Rates Preset
+        const defaultRates = [
+            // Kalimantan Selatan
+            { id: "r1", region: "Kalimantan Selatan", vendorId: "v2", service: "EZ Reguler", price: 24000, eta: "2-3 Hari", coverage: "Banjarmasin, Banjarbaru, Martapura, Tanah Laut" },
+            { id: "r2", region: "Kalimantan Selatan", vendorId: "v1", service: "REG", price: 25000, eta: "2-4 Hari", coverage: "Seluruh Kabupaten & Kota Kalsel" },
+            { id: "r3", region: "Kalimantan Selatan", vendorId: "v1", service: "YES (Yakin Esok Sampai)", price: 38000, eta: "1 Hari", coverage: "Banjarmasin & Banjarbaru" },
+            { id: "r4", region: "Kalimantan Selatan", vendorId: "v3", service: "SIUNTUNT", price: 23000, eta: "2-3 Hari", coverage: "Banjarmasin & Banjarbaru" },
+            { id: "r5", region: "Kalimantan Selatan", vendorId: "v6", service: "Darat Cargo (Min 10kg)", price: 8500, eta: "4-6 Hari", coverage: "Kalsel Cargo Alat Berat" },
+
+            // Bali
+            { id: "r6", region: "Bali", vendorId: "v2", service: "EZ Reguler", price: 22000, eta: "1-2 Hari", coverage: "Denpasar, Badung, Gianyar, Tabanan" },
+            { id: "r7", region: "Bali", vendorId: "v3", service: "BEST (Besok Sampai)", price: 28000, eta: "1 Hari", coverage: "Denpasar & Badung (Kuta/Canggu)" },
+            { id: "r8", region: "Bali", vendorId: "v5", service: "Regular", price: 21000, eta: "2 Hari", coverage: "Seluruh Kabupaten Bali" },
+
+            // DKI Jakarta
+            { id: "r9", region: "DKI Jakarta", vendorId: "v1", service: "REG", price: 10000, eta: "1-2 Hari", coverage: "Seluruh Jakarta" },
+            { id: "r10", region: "DKI Jakarta", vendorId: "v1", service: "YES", price: 18000, eta: "1 Hari", coverage: "Seluruh Jakarta" },
+            { id: "r11", region: "DKI Jakarta", vendorId: "v5", service: "Same Day", price: 20000, eta: "6-8 Jam", coverage: "DKI Jakarta & Bodetabek" },
+
+            // Jawa Timur
+            { id: "r12", region: "Jawa Timur", vendorId: "v2", service: "EZ Reguler", price: 18000, eta: "1-2 Hari", coverage: "Surabaya, Malang, Sidoarjo, Gresik" },
+            { id: "r13", region: "Jawa Timur", vendorId: "v4", service: "Pos Kilat Khusus", price: 17000, eta: "2 Hari", coverage: "Seluruh Jatim" },
+
+            // Sulawesi Selatan
+            { id: "r14", region: "Sulawesi Selatan", vendorId: "v1", service: "REG", price: 28000, eta: "2-3 Hari", coverage: "Makassar, Gowa, Maros, Bone" },
+            { id: "r15", region: "Sulawesi Selatan", vendorId: "v3", service: "SIUNTUNT", price: 26000, eta: "2-3 Hari", coverage: "Kota Makassar" }
+        ];
+
+        // State Storage
+        let appVendors = [];
+        let appRates = [];
+        let leafletMap = null;
+        let geoJsonLayer = null;
+        let selectedRegionName = null;
+
+        // Init App On Load
+        window.onload = function() {
+            loadStorageData();
+            initMap();
+            populateDropdowns();
+            renderAdminRatesTable();
+            renderAdminVendorTable();
+            renderCatalog();
+        };
+
+        // Storage Handlers
+        function loadStorageData() {
+            const storedVendors = localStorage.getItem('logimap_vendors');
+            const storedRates = localStorage.getItem('logimap_rates');
+
+            if (storedVendors && storedRates) {
+                appVendors = JSON.parse(storedVendors);
+                appRates = JSON.parse(storedRates);
+            } else {
+                appVendors = [...defaultVendors];
+                appRates = [...defaultRates];
+                saveStorageData();
+            }
+        }
+
+        function saveStorageData() {
+            localStorage.setItem('logimap_vendors', JSON.stringify(appVendors));
+            localStorage.setItem('logimap_rates', JSON.stringify(appRates));
+        }
+
+        // Navigation Tab Switching
+        function switchTab(tab) {
+            const tabs = ['map', 'catalog', 'admin', 'data'];
+            tabs.forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-${t}-btn`);
+                if (btn) btn.className = "px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition-all";
+            });
+
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tab}-btn`);
+            if (activeBtn) activeBtn.className = "px-3.5 py-1.5 rounded-lg transition-all bg-indigo-600 text-white shadow";
+
+            if (tab === 'map' && leafletMap) {
+                setTimeout(() => leafletMap.invalidateSize(), 200);
+            }
+        }
+
+        function switchAdminSubtab(sub) {
+            document.getElementById('admin-subtab-rate').classList.toggle('hidden', sub !== 'rate');
+            document.getElementById('admin-subtab-vendor').classList.toggle('hidden', sub !== 'vendor');
+
+            document.getElementById('subtab-rate-btn').className = sub === 'rate' 
+                ? "pb-3 border-b-2 border-indigo-500 text-indigo-400 flex items-center" 
+                : "pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center";
+            
+            document.getElementById('subtab-vendor-btn').className = sub === 'vendor' 
+                ? "pb-3 border-b-2 border-indigo-500 text-indigo-400 flex items-center" 
+                : "pb-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center";
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        // Leaflet Map Initialization
+        async function initMap() {
+            leafletMap = L.map('map').setView([-2.5489, 118.0149], 5);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 18
+            }).addTo(leafletMap);
+
+            try {
+                const geoJsonUrl = "https://raw.githubusercontent.com/superpikar/indonesia-geojson/master/indonesia-prov.geojson";
+                const response = await fetch(geoJsonUrl);
+                const geoJsonData = await response.json();
+
+                if (geoJsonLayer) leafletMap.removeLayer(geoJsonLayer);
+
+                geoJsonLayer = L.geoJSON(geoJsonData, {
+                    style: function(feature) {
+                        const provName = feature.properties.PROPINSUI || feature.properties.NAME_1 || "";
+                        const count = getRegionRatesCount(provName);
+
+                        return {
+                            fillColor: count > 0 ? "#6366f1" : "#334155",
+                            weight: 1.5,
+                            opacity: 0.8,
+                            color: "#94a3b8",
+                            fillOpacity: count > 0 ? 0.45 : 0.15
+                        };
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const provName = feature.properties.PROPINSUI || feature.properties.NAME_1 || "Provinsi";
+
+                        layer.on({
+                            mouseover: function(e) {
+                                e.target.setStyle({ weight: 3, color: '#818cf8', fillOpacity: 0.7 });
+                                e.target.bringToFront();
+                            },
+                            mouseout: function(e) {
+                                geoJsonLayer.resetStyle(e.target);
+                            },
+                            click: function(e) {
+                                selectMapRegion(provName);
+                                leafletMap.fitBounds(e.target.getBounds());
+                            }
+                        });
+
+                        const count = getRegionRatesCount(provName);
+                        layer.bindTooltip(`<strong>${provName}</strong><br><span class="text-[10px] text-indigo-300">${count} Tarif Ekspedisi Available</span>`, {
+                            sticky: true,
+                            direction: 'auto',
+                            className: 'bg-slate-900 border border-slate-700 text-slate-100 text-xs px-2.5 py-1 rounded-lg shadow-xl'
+                        });
+                    }
+                }).addTo(leafletMap);
+
+            } catch (e) {
+                showToast("Gagal memuat polygon wilayah peta, peta dasar tetap aktif.", "warning");
+            }
+        }
+
+        function getRegionRatesCount(regionName) {
+            return appRates.filter(r => r.region.toLowerCase().includes(regionName.toLowerCase()) || regionName.toLowerCase().includes(r.region.toLowerCase())).length;
+        }
+
+        function selectMapRegion(regionName) {
+            selectedRegionName = regionName;
+            document.getElementById('region-title').textContent = regionName;
+            document.getElementById('region-subtitle').textContent = `Menampilkan pilihan ekspedisi & ongkir untuk ${regionName}.`;
+
+            filterCouriers();
+        }
+
+        // Calculated Rates & Filters
+        function syncWeightInputs(val) {
+            document.getElementById('package-weight').value = val;
+            updateCalculatedPrices();
+        }
+
+        function updateCalculatedPrices() {
+            const w = parseFloat(document.getElementById('package-weight').value) || 1;
+            document.getElementById('weight-slider').value = Math.min(w, 50);
+            document.getElementById('weight-display').textContent = `${w} Kg`;
+            filterCouriers();
+        }
+
+        function filterCouriers() {
+            if (!selectedRegionName) return;
+
+            const w = parseFloat(document.getElementById('package-weight').value) || 1;
+            const searchQuery = document.getElementById('search-courier').value.toLowerCase();
+            const sortBy = document.getElementById('sort-courier').value;
+
+            let filtered = appRates.filter(r => 
+                (r.region.toLowerCase().includes(selectedRegionName.toLowerCase()) || selectedRegionName.toLowerCase().includes(r.region.toLowerCase())) &&
+                (r.service.toLowerCase().includes(searchQuery) || getVendorName(r.vendorId).toLowerCase().includes(searchQuery))
+            );
+
+            // Sorting
+            if (sortBy === 'price-asc') {
+                filtered.sort((a, b) => (a.price * w) - (b.price * w));
+            } else if (sortBy === 'price-desc') {
+                filtered.sort((a, b) => (b.price * w) - (a.price * w));
+            } else if (sortBy === 'eta-asc') {
+                filtered.sort((a, b) => parseInt(a.eta) - parseInt(b.eta));
+            }
+
+            document.getElementById('expedition-count-badge').textContent = `${filtered.length} Layanan`;
+
+            const container = document.getElementById('courier-list');
+            container.innerHTML = '';
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 px-4 text-slate-400 text-xs bg-slate-900/60 rounded-xl border border-slate-800">
+                        <i class="fa-solid fa-folder-open text-amber-400 text-2xl mb-2 block"></i>
+                        Belum ada data tarif ekspedisi terdaftar untuk wilayah <strong>${selectedRegionName}</strong>.
+                        <br><button onclick="switchTab('admin'); prepareRateFormForRegion('${selectedRegionName}')" class="mt-3 text-indigo-400 font-semibold underline">
+                            + Tambah Tarif Untuk Wilayah Ini
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const vendor = appVendors.find(v => v.id === item.vendorId) || { name: "Vendor Unknown", icon: "fa-truck" };
+                const totalPrice = item.price * w;
+                const formattedTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalPrice);
+                const formattedBase = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price);
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/90 border border-slate-700/80 rounded-xl p-3.5 hover:border-indigo-500/80 transition-all space-y-2 shadow-md";
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-indigo-300 border border-slate-700/80 mb-1">
+                                <i class="fa-solid ${vendor.icon || 'fa-truck'} mr-1"></i> ${vendor.name}
+                            </span>
+                            <h4 class="font-bold text-sm text-white">${item.service}</h4>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] text-slate-400 block">Total Ongkir (${w} Kg)</span>
+                            <span class="text-base font-extrabold text-emerald-400">${formattedTotal}</span>
+                            <span class="text-[10px] text-slate-500 block">@ ${formattedBase} / kg</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+                        <span><i class="fa-regular fa-clock text-indigo-400 mr-1"></i>ETA: <strong class="text-slate-200">${item.eta}</strong></span>
+                        ${item.coverage ? `<span class="truncate max-w-[150px]" title="${item.coverage}"><i class="fa-solid fa-location-dot text-rose-400 mr-1"></i>${item.coverage}</span>` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Directory Render
+        function renderCatalog() {
+            const grid = document.getElementById('catalog-grid');
+            grid.innerHTML = '';
+
+            appVendors.forEach(exp => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-800/80 border border-slate-700/80 rounded-2xl p-5 hover:border-indigo-500/50 transition-all flex flex-col justify-between shadow-xl";
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-lg font-bold">
+                                    <i class="fa-solid ${exp.icon || 'fa-truck-fast'}"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-base text-white">${exp.name}</h3>
+                                    <p class="text-xs text-indigo-400">${exp.tagline || 'Penyedia Jasa Kirim'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed mb-4">${exp.desc || 'Tidak ada deskripsi.'}</p>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-700/80 space-y-2">
+                        ${exp.phone ? `<div class="text-xs text-slate-400 flex items-center"><i class="fa-solid fa-phone text-indigo-400 w-5"></i><span>${exp.phone}</span></div>` : ''}
+                        ${exp.website ? `<div class="text-xs text-slate-400 flex items-center"><i class="fa-solid fa-globe text-emerald-400 w-5"></i><a href="${exp.website}" target="_blank" class="text-indigo-400 hover:underline truncate">${exp.website}</a></div>` : ''}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Admin Populate Options
+        function populateDropdowns() {
+            const regSelect = document.getElementById('rate-region-select');
+            regSelect.innerHTML = indonesiaProvinces.map(p => `<option value="${p}">${p}</option>`).join('');
+
+            const venSelect = document.getElementById('rate-vendor-select');
+            venSelect.innerHTML = appVendors.map(v => `<option value="${v.id}">${v.name}</option>`).join('');
+        }
+
+        function getVendorName(vId) {
+            const found = appVendors.find(v => v.id === vId);
+            return found ? found.name : 'Unknown Vendor';
+        }
+
+        // Admin Rate Form Logic
+        function handleRateFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('rate-edit-id').value;
+            const region = document.getElementById('rate-region-select').value;
+            const vendorId = document.getElementById('rate-vendor-select').value;
+            const service = document.getElementById('rate-service-name').value.trim();
+            const price = parseFloat(document.getElementById('rate-price').value) || 0;
+            const eta = document.getElementById('rate-eta').value.trim();
+            const coverage = document.getElementById('rate-coverage').value.trim();
+
+            if (id) {
+                // Edit
+                const index = appRates.findIndex(r => r.id === id);
+                if (index !== -1) {
+                    appRates[index] = { id, region, vendorId, service, price, eta, coverage };
+                    showToast("Berhasil memperbarui tarif wilayah!", "success");
+                }
+            } else {
+                // Add New
+                const newId = "r_" + Date.now();
+                appRates.push({ id: newId, region, vendorId, service, price, eta, coverage });
+                showToast("Tarif wilayah baru berhasil ditambahkan!", "success");
+            }
+
+            saveStorageData();
+            resetRateForm();
+            renderAdminRatesTable();
+            if (geoJsonLayer) geoJsonLayer.setStyle(geoJsonLayer.options.style);
+            if (selectedRegionName) filterCouriers();
+        }
+
+        function editRate(id) {
+            const item = appRates.find(r => r.id === id);
+            if (!item) return;
+
+            document.getElementById('rate-edit-id').value = item.id;
+            document.getElementById('rate-region-select').value = item.region;
+            document.getElementById('rate-vendor-select').value = item.vendorId;
+            document.getElementById('rate-service-name').value = item.service;
+            document.getElementById('rate-price').value = item.price;
+            document.getElementById('rate-eta').value = item.eta;
+            document.getElementById('rate-coverage').value = item.coverage || '';
+
+            document.getElementById('rate-form-title').innerHTML = `<i class="fa-solid fa-pen text-amber-400 mr-2"></i>Edit Tarif Wilayah`;
+            switchTab('admin');
+            switchAdminSubtab('rate');
+        }
+
+        function deleteRate(id) {
+            if (!confirm("Apakah Anda yakin ingin menghapus tarif ini?")) return;
+            appRates = appRates.filter(r => r.id !== id);
+            saveStorageData();
+            renderAdminRatesTable();
+            showToast("Tarif berhasil dihapus.", "info");
+            if (geoJsonLayer) geoJsonLayer.setStyle(geoJsonLayer.options.style);
+            if (selectedRegionName) filterCouriers();
+        }
+
+        function resetRateForm() {
+            document.getElementById('rate-form').reset();
+            document.getElementById('rate-edit-id').value = '';
+            document.getElementById('rate-form-title').innerHTML = `<i class="fa-solid fa-circle-plus text-emerald-400 mr-2"></i>Tambah Tarif Wilayah Baru`;
+        }
+
+        function prepareRateFormForRegion(regionName) {
+            resetRateForm();
+            document.getElementById('rate-region-select').value = regionName;
+            switchAdminSubtab('rate');
+        }
+
+        function renderAdminRatesTable() {
+            const tbody = document.getElementById('admin-rates-tbody');
+            const query = (document.getElementById('filter-admin-rates')?.value || '').toLowerCase();
+
+            const filtered = appRates.filter(r => 
+                r.region.toLowerCase().includes(query) || 
+                r.service.toLowerCase().includes(query) || 
+                getVendorName(r.vendorId).toLowerCase().includes(query)
+            );
+
+            tbody.innerHTML = filtered.map(r => `
+                <tr class="hover:bg-slate-700/30">
+                    <td class="p-2.5 font-bold text-white">${r.region}</td>
+                    <td class="p-2.5">
+                        <div class="font-semibold text-indigo-300">${getVendorName(r.vendorId)}</div>
+                        <div class="text-[11px] text-slate-400">${r.service}</div>
+                    </td>
+                    <td class="p-2.5 font-extrabold text-emerald-400">Rp ${Number(r.price).toLocaleString('id-ID')}</td>
+                    <td class="p-2.5 text-slate-300">${r.eta}</td>
+                    <td class="p-2.5 text-center space-x-1">
+                        <button onclick="editRate('${r.id}')" class="p-1.5 bg-slate-700 hover:bg-amber-600 text-white rounded-lg transition-all" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="deleteRate('${r.id}')" class="p-1.5 bg-slate-700 hover:bg-rose-600 text-white rounded-lg transition-all" title="Hapus"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Admin Vendor Form Logic
+        function handleVendorFormSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('vendor-edit-id').value;
+            const name = document.getElementById('vendor-name').value.trim();
+            const tagline = document.getElementById('vendor-tagline').value.trim();
+            const icon = document.getElementById('vendor-icon').value.trim() || 'fa-truck-fast';
+            const phone = document.getElementById('vendor-phone').value.trim();
+            const website = document.getElementById('vendor-website').value.trim();
+            const desc = document.getElementById('vendor-desc').value.trim();
+
+            if (id) {
+                const idx = appVendors.findIndex(v => v.id === id);
+                if (idx !== -1) {
+                    appVendors[idx] = { id, name, tagline, icon, phone, website, desc };
+                    showToast("Vendor berhasil diperbarui!", "success");
+                }
+            } else {
+                const newId = "v_" + Date.now();
+                appVendors.push({ id: newId, name, tagline, icon, phone, website, desc });
+                showToast("Vendor baru berhasil ditambahkan!", "success");
+            }
+
+            saveStorageData();
+            resetVendorForm();
+            populateDropdowns();
+            renderAdminVendorTable();
+            renderCatalog();
+        }
+
+        function prepareNewVendorForm() {
+            resetVendorForm();
+            switchAdminSubtab('vendor');
+        }
+
+        function editVendor(id) {
+            const item = appVendors.find(v => v.id === id);
+            if (!item) return;
+
+            document.getElementById('vendor-edit-id').value = item.id;
+            document.getElementById('vendor-name').value = item.name;
+            document.getElementById('vendor-tagline').value = item.tagline || '';
+            document.getElementById('vendor-icon').value = item.icon || '';
+            document.getElementById('vendor-phone').value = item.phone || '';
+            document.getElementById('vendor-website').value = item.website || '';
+            document.getElementById('vendor-desc').value = item.desc || '';
+
+            document.getElementById('vendor-form-title').innerHTML = `<i class="fa-solid fa-pen text-amber-400 mr-2"></i>Edit Profil Vendor`;
+            switchTab('admin');
+            switchAdminSubtab('vendor');
+        }
+
+        function deleteVendor(id) {
+            if (!confirm("Menghapus vendor juga akan menghapus seluruh tarif yang terhubung dengan vendor ini. Lanjutkan?")) return;
+            appVendors = appVendors.filter(v => v.id !== id);
+            appRates = appRates.filter(r => r.vendorId !== id);
+
+            saveStorageData();
+            populateDropdowns();
+            renderAdminVendorTable();
+            renderAdminRatesTable();
+            renderCatalog();
+            showToast("Vendor dan tarif terkait berhasil dihapus.", "info");
+        }
+
+        function resetVendorForm() {
+            document.getElementById('vendor-form').reset();
+            document.getElementById('vendor-edit-id').value = '';
+            document.getElementById('vendor-form-title').innerHTML = `<i class="fa-solid fa-truck-arrow-right text-indigo-400 mr-2"></i>Tambah Vendor Baru`;
+        }
+
+        function renderAdminVendorTable() {
+            const tbody = document.getElementById('admin-vendor-tbody');
+            tbody.innerHTML = appVendors.map(v => `
+                <tr class="hover:bg-slate-700/30">
+                    <td class="p-2.5 font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid ${v.icon || 'fa-truck'} text-indigo-400"></i>
+                        <span>${v.name}</span>
+                    </td>
+                    <td class="p-2.5 text-slate-300 text-[11px]">${v.tagline || '-'}</td>
+                    <td class="p-2.5 text-slate-300 text-[11px]">${v.phone || '-'}</td>
+                    <td class="p-2.5 text-center space-x-1">
+                        <button onclick="editVendor('${v.id}')" class="p-1.5 bg-slate-700 hover:bg-amber-600 text-white rounded-lg transition-all" title="Edit"><i class="fa-solid fa-pen text-xs"></i></button>
+                        <button onclick="deleteVendor('${v.id}')" class="p-1.5 bg-slate-700 hover:bg-rose-600 text-white rounded-lg transition-all" title="Hapus"><i class="fa-solid fa-trash text-xs"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Export / Import Data JSON
+        function exportDataJSON() {
+            const payload = {
+                vendors: appVendors,
+                rates: appRates,
+                exportedAt: new Date().toISOString()
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `logimap_backup_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchorElem.click();
+
+            showToast("Backup data JSON berhasil diunduh!", "success");
+        }
+
+        function importDataJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.vendors && parsed.rates) {
+                        appVendors = parsed.vendors;
+                        appRates = parsed.rates;
+                        saveStorageData();
+                        populateDropdowns();
+                        renderAdminVendorTable();
+                        renderAdminRatesTable();
+                        renderCatalog();
+                        if (geoJsonLayer) geoJsonLayer.setStyle(geoJsonLayer.options.style);
+
+                        showToast("Data berhasil dipulihkan dari file JSON!", "success");
+                    } else {
+                        alert("Format JSON tidak valid!");
+                    }
+                } catch (err) {
+                    alert("Gagal membaca file JSON: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetToSampleData() {
+            if (!confirm("Apakah Anda yakin ingin mengembalikan seluruh data ke sampel standar? Data kustomisasi Anda akan tertimpa.")) return;
+            appVendors = [...defaultVendors];
+            appRates = [...defaultRates];
+            saveStorageData();
+            populateDropdowns();
+            renderAdminVendorTable();
+            renderAdminRatesTable();
+            renderCatalog();
+            if (geoJsonLayer) geoJsonLayer.setStyle(geoJsonLayer.options.style);
+            showToast("Data telah dikembalikan ke sampel standar.", "info");
+        }
+
+        // Toast Notification System
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            const bgClass = type === 'success' ? 'bg-emerald-600' : type === 'warning' ? 'bg-amber-600' : type === 'error' ? 'bg-rose-600' : 'bg-indigo-600';
+            const iconClass = type === 'success' ? 'fa-circle-check' : 'fa-circle-info';
+
+            toast.className = `${bgClass} text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 transform transition-all duration-300 opacity-0 translate-y-2 pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass}"></i><span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-0', 'translate-y-2');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
