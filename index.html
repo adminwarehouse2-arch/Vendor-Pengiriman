@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Master Ekspedisi & Wilayah</title>
+  <!-- Tailwind CSS & FontAwesome Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
 </head>
@@ -11,16 +12,26 @@
 
   <!-- Header -->
   <header class="bg-indigo-600 text-white shadow-lg p-5">
-    <div class="max-w-7xl mx-auto flex justify-between items-center">
+    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
       <h1 class="text-2xl font-bold flex items-center gap-2">
         <i class="fa-solid fa-truck-fast"></i> Dashboard Ekspedisi & Master Wilayah
       </h1>
-      <span class="text-sm bg-indigo-700 px-3 py-1 rounded-full border border-indigo-500">Live Sheets Sync</span>
+      <!-- Indikator Waktu Live Sync -->
+      <div class="flex items-center gap-2 bg-indigo-700/80 px-4 py-1.5 rounded-full border border-indigo-400 text-xs">
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        </span>
+        <span>Terakhir Sync: <strong id="sync-time" class="text-emerald-300">Memuat...</strong></span>
+        <button onclick="loadData(true)" title="Refresh Data" class="ml-2 hover:text-emerald-300 transition-colors">
+          <i class="fa-solid fa-rotate-right" id="refresh-icon"></i>
+        </button>
+      </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto p-6">
-    <!-- Stat Cards -->
+    <!-- Stat Cards / Ringkasan Informasi -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
       <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
         <div class="text-slate-500 text-sm font-medium">Total Ekspedisi</div>
@@ -110,33 +121,66 @@
   </div>
 
   <script>
-    // URL Web App dari Apps Script kamu
-    const API_URL = "https://script.google.com/macros/s/AKfycbxpd8825TPLzRBuqhwisJXB0LxiU3-FTyyuPvW-mOjqpYyORc8dJadC_VKupjiegxwCAw/exec";
+    // URL Web App Versi 2
+    const API_URL = "https://script.google.com/macros/s/AKfycbwn6RaOKxb885FpJdzrKJOyxgNi5dD5yxwd3wENqEkdKV-AFFgY_wGKi0gjjQsodfQd/exec";
     let rawData = [];
 
-    document.addEventListener('DOMContentLoaded', loadData);
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Tampilkan Data Cache Dulu (Super Cepat / Instant Load)
+      const cachedData = localStorage.getItem('expedition_data');
+      const cachedTime = localStorage.getItem('expedition_last_sync');
+      
+      if (cachedData) {
+        rawData = JSON.parse(cachedData);
+        renderTable(rawData);
+        calculateStats(rawData);
+        if (cachedTime) document.getElementById('sync-time').innerText = cachedTime;
+      }
+      
+      // 2. Tarik Data Terbaru dari Google Sheets di Background
+      loadData();
+    });
 
-    function loadData() {
-      fetch(API_URL + "?action=getData")
+    function loadData(manual = false) {
+      const refreshIcon = document.getElementById('refresh-icon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      fetch(API_URL)
         .then(res => res.json())
         .then(response => {
           rawData = response.rows;
+          const lastUpdated = response.lastUpdated || new Date().toLocaleTimeString('id-ID') + ' WIB';
+
+          // Simpan ke Cache Browser
+          localStorage.setItem('expedition_data', JSON.stringify(rawData));
+          localStorage.setItem('expedition_last_sync', lastUpdated);
+
+          // Update Tampilan UI
           renderTable(rawData);
           calculateStats(rawData);
+          document.getElementById('sync-time').innerText = lastUpdated;
+          if (refreshIcon) refreshIcon.classList.remove('fa-spin');
         })
-        .catch(err => console.error("Error fetching data:", err));
+        .catch(err => {
+          console.error("Error fetching data:", err);
+          if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+        });
     }
 
     function renderTable(rows) {
       const tbody = document.getElementById('table-body');
-      tbody.innerHTML = '';
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-slate-400">Tidak ada data ditemukan.</td></tr>';
+        return;
+      }
 
+      tbody.innerHTML = '';
       rows.forEach((row, index) => {
         const isFrozen = (row[6] || '').toLowerCase().includes('frozen') && !(row[6] || '').toLowerCase().includes('non');
         const badgeColor = isFrozen ? 'bg-cyan-100 text-cyan-700' : 'bg-amber-100 text-amber-700';
 
         tbody.innerHTML += `
-          <tr class="hover:bg-slate-50">
+          <tr class="hover:bg-slate-50 border-b border-slate-100">
             <td class="p-4 font-semibold text-slate-800">${row[0] || '-'}</td>
             <td class="p-4">${row[1] || '-'}</td>
             <td class="p-4 font-medium text-emerald-600">${row[2] || '-'}</td>
@@ -144,7 +188,9 @@
             <td class="p-4 text-slate-500">${row[4] || '-'}</td>
             <td class="p-4"><span class="px-2 py-1 text-xs rounded-full font-medium ${badgeColor}">${row[6] || 'NON-FROZEN'}</span></td>
             <td class="p-4 text-center">
-              <button onclick="openModal(${index})" class="text-indigo-600 hover:text-indigo-800 p-2"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+              <button onclick="openModal(${index})" class="text-indigo-600 hover:text-indigo-800 p-2 font-medium">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
             </td>
           </tr>
         `;
@@ -212,18 +258,28 @@
 
       fetch(API_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ rowIndex: index, rowData: updatedRow })
-      }).then(() => {
+      })
+      .then(res => res.json())
+      .then(res => {
         rawData[index] = updatedRow;
+        const now = res.lastUpdated || new Date().toLocaleTimeString('id-ID') + ' WIB';
+        
+        localStorage.setItem('expedition_data', JSON.stringify(rawData));
+        localStorage.setItem('expedition_last_sync', now);
+
         renderTable(rawData);
         calculateStats(rawData);
+        document.getElementById('sync-time').innerText = now;
+        
         btn.innerText = "Simpan Perubahan";
         btn.disabled = false;
         closeModal();
-      }).catch(err => {
-        alert("Gagal menyimpan data.");
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Gagal menyimpan ke Sheets.");
         btn.innerText = "Simpan Perubahan";
         btn.disabled = false;
       });
