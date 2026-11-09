@@ -3,186 +3,274 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Explorer Master Wilayah & Ekspedisi</title>
+  <title>Portal Master Wilayah & Ekspedisi</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
   <style>
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
   </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
 
-  <!-- Top Navbar -->
-  <header class="bg-gradient-to-r from-indigo-700 to-blue-600 text-white shadow-md sticky top-0 z-30">
+  <!-- Top Navbar Dual Theme -->
+  <header class="bg-slate-950/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30">
     <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
       <div class="flex items-center gap-3">
-        <div class="bg-white/20 p-2 rounded-xl backdrop-blur-md">
-          <i class="fa-solid fa-map-location-dot text-2xl text-amber-300"></i>
+        <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 p-2.5 rounded-xl shadow-lg shadow-indigo-500/20">
+          <i class="fa-solid fa-truck-fast text-2xl text-white"></i>
         </div>
         <div>
-          <h1 class="text-xl font-bold leading-tight">Master Wilayah & Ekspedisi</h1>
-          <p class="text-xs text-indigo-100">Portal Pencarian Tarif & Pengiriman Nusantara</p>
+          <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent leading-tight">
+            Master Wilayah & Ekspedisi
+          </h1>
+          <p class="text-xs text-slate-400">Logistik & Tarif Pengiriman Nusantara</p>
         </div>
       </div>
 
+      <!-- Navigation Tabs (Halaman 1 vs Halaman 2) -->
+      <div class="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800">
+        <button id="tab-btn-1" onclick="switchPage(1)" class="px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
+          <i class="fa-solid fa-chart-pie"></i> Halaman 1: Dashboard View
+        </button>
+        <button id="tab-btn-2" onclick="switchPage(2)" class="px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-pen-to-square"></i> Halaman 2: Kelola & Edit Sheet
+        </button>
+      </div>
+
       <!-- Live Sync Indicator -->
-      <div class="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-full border border-white/10 text-xs">
+      <div class="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
         <span class="relative flex h-2.5 w-2.5">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
         </span>
-        <span class="text-indigo-100">Sync: <strong id="sync-time" class="text-emerald-300">Memuat...</strong></span>
-        <button onclick="loadData(true)" title="Refresh Data" class="ml-1 text-white hover:text-emerald-300 transition-transform active:rotate-180">
+        <span class="text-slate-400">Sync: <strong id="sync-time" class="text-emerald-400">Memuat...</strong></span>
+        <button onclick="loadData(true)" title="Refresh Data" class="ml-1 text-slate-400 hover:text-emerald-400 transition-transform active:rotate-180">
           <i class="fa-solid fa-rotate-right" id="refresh-icon"></i>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Content -->
+  <!-- Container Halaman -->
   <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
 
-    <!-- KPI Summary Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
-        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold">
-          <i class="fa-solid fa-globe"></i>
+    <!-- ==================== HALAMAN 1: DASHBOARD VIEW ONLY ==================== -->
+    <div id="page-1" class="space-y-6">
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-800/60 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-4">
+          <div class="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-xl flex items-center justify-center text-xl font-bold border border-indigo-500/20">
+            <i class="fa-solid fa-globe"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium">Total Pulau</div>
+            <div id="p1-kpi-pulau" class="text-2xl font-bold text-white">0</div>
+          </div>
         </div>
-        <div>
-          <div class="text-xs text-slate-500 font-medium">Total Pulau</div>
-          <div id="kpi-pulau" class="text-xl font-bold text-slate-800">0</div>
+        <div class="bg-slate-800/60 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-4">
+          <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center text-xl font-bold border border-emerald-500/20">
+            <i class="fa-solid fa-map"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium">Total Provinsi</div>
+            <div id="p1-kpi-provinsi" class="text-2xl font-bold text-white">0</div>
+          </div>
+        </div>
+        <div class="bg-slate-800/60 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-4">
+          <div class="w-12 h-12 bg-cyan-500/10 text-cyan-400 rounded-xl flex items-center justify-center text-xl font-bold border border-cyan-500/20">
+            <i class="fa-solid fa-city"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium">Kota / Kab</div>
+            <div id="p1-kpi-kabupaten" class="text-2xl font-bold text-white">0</div>
+          </div>
+        </div>
+        <div class="bg-slate-800/60 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 flex items-center gap-4">
+          <div class="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center text-xl font-bold border border-amber-500/20">
+            <i class="fa-solid fa-truck-ramp-box"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400 font-medium">Opsi Ekspedisi</div>
+            <div id="p1-kpi-ekspedisi" class="text-2xl font-bold text-white">0</div>
+          </div>
         </div>
       </div>
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
-        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold">
-          <i class="fa-solid fa-map"></i>
+
+      <!-- Filter Section Halaman 1 -->
+      <div class="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/50 pb-3">
+          <div class="flex items-center gap-2 text-indigo-400">
+            <i class="fa-solid fa-filter"></i>
+            <h2 class="font-bold text-white">Pencarian & Filter Wilayah</h2>
+          </div>
+          <div class="relative w-full sm:w-64">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-xs"></i>
+            <input type="text" id="p1-search" onkeyup="p1RenderHierarchy()" placeholder="Cari nama kab/kota..." class="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
         </div>
-        <div>
-          <div class="text-xs text-slate-500 font-medium">Total Provinsi</div>
-          <div id="kpi-provinsi" class="text-xl font-bold text-slate-800">0</div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">1. Pulau</label>
+            <select id="p1-select-pulau" onchange="p1OnPulauChange()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              <option value="">-- Semua Pulau --</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">2. Provinsi</label>
+            <select id="p1-select-prov" onchange="p1OnProvChange()" disabled class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-40">
+              <option value="">-- Semua Provinsi --</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">3. Kab / Kota</label>
+            <select id="p1-select-kab" onchange="p1RenderHierarchy()" disabled class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-40">
+              <option value="">-- Semua Kab / Kota --</option>
+            </select>
+          </div>
         </div>
       </div>
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
-        <div class="w-12 h-12 bg-cyan-50 text-cyan-600 rounded-xl flex items-center justify-center text-xl font-bold">
-          <i class="fa-solid fa-city"></i>
+
+      <!-- Hirarki Accordion View Only -->
+      <div class="space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-layer-group text-indigo-400"></i> Daftar Wilayah
+            <span id="p1-count-badge" class="bg-indigo-500/20 text-indigo-300 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-indigo-500/30">0</span>
+          </h3>
+          <div class="flex gap-2">
+            <button onclick="p1ToggleAll(true)" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 hover:bg-slate-700"><i class="fa-solid fa-angles-down mr-1"></i> Buka Semua</button>
+            <button onclick="p1ToggleAll(false)" class="text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-slate-300 hover:bg-slate-700"><i class="fa-solid fa-angles-up mr-1"></i> Tutup Semua</button>
+          </div>
         </div>
-        <div>
-          <div class="text-xs text-slate-500 font-medium">Kota / Kab</div>
-          <div id="kpi-kabupaten" class="text-xl font-bold text-slate-800">0</div>
-        </div>
-      </div>
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
-        <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl font-bold">
-          <i class="fa-solid fa-truck-ramp-box"></i>
-        </div>
-        <div>
-          <div class="text-xs text-slate-500 font-medium">Opsi Ekspedisi</div>
-          <div id="kpi-ekspedisi" class="text-xl font-bold text-slate-800">0</div>
+
+        <div id="p1-hierarchy-container" class="space-y-4">
+          <!-- Rendered via JS -->
         </div>
       </div>
     </div>
 
-    <!-- Filter Step Bar -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3 border-slate-100">
-        <div class="flex items-center gap-2">
-          <i class="fa-solid fa-filter text-indigo-600"></i>
-          <h2 class="font-bold text-slate-800">Filter Wilayah Bertingkat</h2>
+
+    <!-- ==================== HALAMAN 2: KELOLA & EDIT DATA ==================== -->
+    <div id="page-2" class="space-y-6 hidden">
+      <!-- Top Action Bar Halaman 2 -->
+      <div class="bg-slate-800/60 p-6 rounded-2xl border border-slate-700/50 flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-sliders text-emerald-400"></i> Pengelola Data Master Wilayah
+          </h2>
+          <p class="text-xs text-slate-400">Pilih wilayah berurutan di bawah ini untuk mengedit baris Sheet atau menambahkan data baru.</p>
         </div>
-        <!-- Quick Search -->
-        <div class="relative w-full sm:w-64">
-          <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
-          <input type="text" id="quick-search" onkeyup="renderHierarchy()" placeholder="Cari kota/kabupaten..." class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        </div>
+        <button onclick="openAddModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition-all">
+          <i class="fa-solid fa-plus text-sm"></i> Tambah Data Baru
+        </button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Step 1: Pulau -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-indigo-600 flex items-center gap-1.5">
-            <span class="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 text-[11px]">1</span>
-            Filter Pulau
-          </label>
-          <select id="select-pulau" onchange="onPulauChange()" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            <option value="">-- Semua Pulau --</option>
-          </select>
-        </div>
-
-        <!-- Step 2: Provinsi -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-indigo-600 flex items-center gap-1.5">
-            <span class="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 text-[11px]">2</span>
-            Filter Provinsi
-          </label>
-          <select id="select-provinsi" onchange="onProvinsiChange()" disabled class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-50">
-            <option value="">-- Semua Provinsi --</option>
-          </select>
-        </div>
-
-        <!-- Step 3: Kabupaten / Kota -->
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-indigo-600 flex items-center gap-1.5">
-            <span class="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 text-[11px]">3</span>
-            Filter Kab / Kota
-          </label>
-          <select id="select-kabupaten" onchange="onKabupatenChange()" disabled class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:opacity-50">
-            <option value="">-- Semua Kab / Kota --</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- Hirarki Accordion Wilayah (Bisa Ditarik/Tutup Atas Bawah) -->
-    <div class="space-y-4">
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-layer-group text-indigo-600"></i> Struktur Wilayah Pengiriman
-          <span id="count-badge" class="bg-indigo-100 text-indigo-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">0</span>
+      <!-- Step Selection Pengelompokan Berurutan -->
+      <div class="bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 space-y-4">
+        <h3 class="text-sm font-bold text-slate-300 flex items-center gap-2 border-b border-slate-700/50 pb-3">
+          <i class="fa-solid fa-sitemap text-indigo-400"></i> Pilih Berurutan Daerah Yang Ingin Dikelola:
         </h3>
-        <div class="flex gap-2">
-          <button onclick="toggleAllAccordions(true)" class="text-xs bg-white border px-3 py-1 rounded-lg text-slate-600 hover:bg-slate-50"><i class="fa-solid fa-angles-down mr-1"></i> Buka Semua</button>
-          <button onclick="toggleAllAccordions(false)" class="text-xs bg-white border px-3 py-1 rounded-lg text-slate-600 hover:bg-slate-50"><i class="fa-solid fa-angles-up mr-1"></i> Tutup Semua</button>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">Langkah 1: Pulau</label>
+            <select id="p2-select-pulau" onchange="p2OnPulauChange()" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              <option value="">-- Pilih Pulau --</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">Langkah 2: Provinsi</label>
+            <select id="p2-select-prov" onchange="p2OnProvChange()" disabled class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:opacity-40">
+              <option value="">-- Pilih Provinsi --</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-400 mb-1.5 block">Langkah 3: Kab / Kota Target</label>
+            <select id="p2-select-kab" onchange="p2OnKabChange()" disabled class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-3 focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:opacity-40">
+              <option value="">-- Pilih Kab / Kota --</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <!-- Container Accordion Pulau -> Provinsi -> Kab -->
-      <div id="hierarchy-container" class="space-y-4">
-        <!-- Rendered via JS -->
+      <!-- Tabel Edit Baris Per Daerah -->
+      <div id="p2-table-wrapper" class="bg-slate-800/60 rounded-2xl border border-slate-700/50 overflow-hidden hidden">
+        <div class="p-4 bg-slate-800/80 border-b border-slate-700 flex justify-between items-center">
+          <h4 class="font-bold text-white text-sm flex items-center gap-2">
+            <i class="fa-solid fa-table-list text-emerald-400"></i> 
+            Daftar Data Sheet di: <span id="p2-target-title" class="text-emerald-300"></span>
+          </h4>
+          <span id="p2-row-count" class="text-xs bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full font-semibold">0 Baris</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-900/80 text-slate-400 font-bold uppercase border-b border-slate-700">
+              <tr>
+                <th class="p-3">Ekspedisi (E)</th>
+                <th class="p-3">Armada (F)</th>
+                <th class="p-3">Layanan (G)</th>
+                <th class="p-3">Shipment Rate (-) (H)</th>
+                <th class="p-3">Shipment Cost (-) (I)</th>
+                <th class="p-3 text-emerald-400">Shipment Cost (+) (J)</th>
+                <th class="p-3">Paket (K)</th>
+                <th class="p-3">Keterangan (L)</th>
+                <th class="p-3 text-center">Aksi Edit</th>
+              </tr>
+            </thead>
+            <tbody id="p2-table-body" class="divide-y divide-slate-700/50 text-slate-200">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="p2-placeholder" class="bg-slate-800/30 p-12 rounded-2xl border border-slate-700/30 text-center text-slate-500 space-y-2">
+        <i class="fa-solid fa-hand-pointer text-3xl text-slate-600 mb-2"></i>
+        <p class="text-sm font-semibold text-slate-400">Silakan pilih Pulau ➔ Provinsi ➔ Kab/Kota pada dropdown di atas untuk mengedit data.</p>
       </div>
     </div>
+
   </main>
 
-  <!-- POPUP MODAL 1: Detail Ekspedisi Per Wilayah -->
-  <div id="modal-ekspedisi" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4 z-40 transition-opacity">
-    <div class="bg-white rounded-2xl max-w-5xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="bg-indigo-600 text-white p-5 flex justify-between items-center">
+  <!-- POPUP MODAL VIEW ONLY (Halaman 1) -->
+  <div id="modal-view-detail" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 rounded-2xl max-w-6xl w-full border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-gradient-to-r from-indigo-700 to-slate-900 p-5 text-white flex justify-between items-center border-b border-slate-700">
         <div>
-          <span id="modal-subtitle" class="text-xs text-indigo-200 uppercase tracking-wider font-semibold">Daftar Ekspedisi & Tarif</span>
-          <h2 id="modal-title" class="text-xl font-bold flex items-center gap-2">
-            <i class="fa-solid fa-location-dot"></i> <span id="modal-kab-name">Nama Kota</span>
+          <span id="vmodal-subtitle" class="text-xs text-indigo-300 font-semibold uppercase tracking-wider">Detail Pengiriman & Tarif Terendah</span>
+          <h2 id="vmodal-title" class="text-xl font-bold flex items-center gap-2 mt-0.5">
+            <i class="fa-solid fa-location-dot text-amber-400"></i> <span id="vmodal-kab-name"></span>
           </h2>
         </div>
-        <button onclick="closeEkspedisiModal()" class="w-9 h-9 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors">
+        <button onclick="closeViewModal()" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center text-slate-300 transition-colors">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
 
-      <div class="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
-        <div class="overflow-x-auto border border-slate-200 rounded-xl">
-          <table class="w-full text-left border-collapse text-xs md:text-sm">
-            <thead class="bg-slate-50 text-slate-600 font-bold uppercase border-b border-slate-200">
+      <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+        <div class="overflow-x-auto border border-slate-800 rounded-xl">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-950 text-slate-400 font-bold uppercase border-b border-slate-800">
               <tr>
                 <th class="p-3">Ekspedisi</th>
-                <th class="p-3">Armada</th>
-                <th class="p-3">Layanan</th>
-                <th class="p-3">Harga</th>
-                <th class="p-3">Estimasi / Paket</th>
-                <th class="p-3 text-center">Aksi</th>
+                <th class="p-3">Armada (F)</th>
+                <th class="p-3">Layanan (G)</th>
+                <th class="p-3">Rate (-) (H)</th>
+                <th class="p-3">Cost (-) (I)</th>
+                <th class="p-3 text-emerald-400 bg-slate-900/50">Cost (+) / Harga (J) 🔽</th>
+                <th class="p-3">Paket (K)</th>
+                <th class="p-3">Keterangan (L)</th>
+                <th class="p-3">PTD (M)</th>
+                <th class="p-3">Cost (-) (N)</th>
+                <th class="p-3">Cost (+) (O)</th>
+                <th class="p-3">Keterangan 1 (P/Q)</th>
               </tr>
             </thead>
-            <tbody id="modal-table-body" class="divide-y divide-slate-100">
+            <tbody id="vmodal-table-body" class="divide-y divide-slate-800 text-slate-300">
               <!-- Rendered via JS -->
             </tbody>
           </table>
@@ -191,74 +279,116 @@
     </div>
   </div>
 
-  <!-- POPUP MODAL 2: Form Edit Data -->
-  <div id="modal-edit" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-        <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
-          <i class="fa-solid fa-pen-to-square text-indigo-600"></i> Edit Baris Master Wilayah
+  <!-- POPUP MODAL FORM EDIT / TAMBAH DATA (Halaman 2) -->
+  <div id="modal-form-editor" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 rounded-2xl max-w-2xl w-full border border-slate-700 shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 id="form-modal-title" class="font-bold text-white text-lg flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-emerald-400"></i> Edit Data Ekspedisi
         </h3>
-        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600">
+        <button onclick="closeFormModal()" class="text-slate-400 hover:text-white">
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
       </div>
 
-      <form id="edit-form" onsubmit="saveEdit(event)" class="space-y-3">
-        <input type="hidden" id="edit-row-index">
-        <div class="grid grid-cols-2 gap-2">
+      <form id="sheet-edit-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
+        <input type="hidden" id="form-action-type" value="edit">
+        <input type="hidden" id="form-row-index">
+
+        <div class="grid grid-cols-3 gap-3 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
           <div>
-            <label class="text-xs font-semibold text-slate-600">Pulau (B)</label>
-            <input type="text" id="edit-pulau" class="w-full p-2 border border-slate-300 rounded-lg text-xs mt-1" required>
+            <label class="text-[11px] font-semibold text-slate-400">Pulau (B)</label>
+            <input type="text" id="f-pulau" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1" required>
           </div>
           <div>
-            <label class="text-xs font-semibold text-slate-600">Provinsi (C)</label>
-            <input type="text" id="edit-provinsi" class="w-full p-2 border border-slate-300 rounded-lg text-xs mt-1" required>
-          </div>
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-slate-600">Kab / Kota (D)</label>
-          <input type="text" id="edit-kab" class="w-full p-2 border border-slate-300 rounded-lg text-xs mt-1" required>
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-xs font-semibold text-slate-600">Ekspedisi (E)</label>
-            <input type="text" id="edit-ekspedisi" class="w-full p-2 border border-slate-300 rounded-lg text-xs mt-1" required>
+            <label class="text-[11px] font-semibold text-slate-400">Provinsi (C)</label>
+            <input type="text" id="f-prov" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1" required>
           </div>
           <div>
-            <label class="text-xs font-semibold text-slate-600">Armada (F)</label>
-            <input type="text" id="edit-armada" class="w-full p-2 border border-slate-300 rounded-lg text-xs mt-1">
+            <label class="text-[11px] font-semibold text-slate-400">Kab / Kota (D)</label>
+            <input type="text" id="f-kab" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1" required>
           </div>
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-xs font-semibold text-slate-600">Layanan (G)</label>
-            <input type="text" id="edit-layanan" class="w-full p-2 border border-slate-300 rounded-lg text-xs mt-1">
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-slate-600">Harga/Cost (I/J)</label>
-            <input type="text" id="edit-harga" class="w-full p-2 border border-slate-300 rounded-lg text-xs mt-1">
-          </div>
-        </div>
-        <div>
-          <label class="text-xs font-semibold text-slate-600">Estimasi / Paket (K)</label>
-          <input type="text" id="edit-estimasi" class="w-full p-2 border border-slate-300 rounded-lg text-xs mt-1">
         </div>
 
-        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
-          <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-sm bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200">Batal</button>
-          <button type="submit" id="save-btn" class="px-4 py-2 text-sm bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700">Simpan Ke Sheet</button>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400">Ekspedisi (E)</label>
+            <input type="text" id="f-ekspedisi" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1" required>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400">Armada (F)</label>
+            <input type="text" id="f-armada" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400">Layanan (G)</label>
+            <input type="text" id="f-layanan" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400">Shipment Rate (-) (H)</label>
+            <input type="text" id="f-rate-h" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400">Shipment Cost (-) (I)</label>
+            <input type="text" id="f-cost-i" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-emerald-400">Shipment Cost (+) (J)</label>
+            <input type="text" id="f-cost-j" class="w-full bg-slate-950 border border-emerald-500/50 rounded-lg p-2 text-xs text-emerald-300 font-bold mt-1" required placeholder="Rp...">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400">Paket (K)</label>
+            <input type="text" id="f-paket-k" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[11px] font-semibold text-slate-400">Keterangan Utama (L)</label>
+          <input type="text" id="f-ket-l" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400">PTD (M)</label>
+            <input type="text" id="f-ptd-m" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400">Cost (-) (N)</label>
+            <input type="text" id="f-cost-n" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400">Cost (+) (O)</label>
+            <input type="text" id="f-cost-o" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[11px] font-semibold text-slate-400">Keterangan Tambahan (P/Q)</label>
+          <input type="text" id="f-ket-p" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white mt-1">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeFormModal()" class="px-4 py-2 text-xs bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700">Batal</button>
+          <button type="submit" id="form-submit-btn" class="px-5 py-2 text-xs bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-500 shadow-lg shadow-emerald-600/30">
+            Simpan Perubahan Ke Sheet
+          </button>
         </div>
       </form>
     </div>
   </div>
 
+
   <script>
     const SPREADSHEET_ID = "1P5VgEFvvHOzHATlwlaeNNieyFezZM6Ukijhdxa4Fw0A";
     const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=Master%20Wilayah`;
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtRNoAxClvhLJhisVXQemi0j0tb3CoPGWrY4WJ9j69YivH_L6clI4E4CGlFFbMCsmRiA/exec";
+    
+    // URL Web App Apps Script Version 4
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwY48A-ZodRjgHr07XsV_PG6dZKLG_iEZffbE718OhXwgHgj-fg8_umjPsICVeG2MvvA/exec";
 
     let rawSheetRows = [];
-    let currentSelectedKab = "";
+    let currentPage = 1;
 
     document.addEventListener('DOMContentLoaded', () => {
       const cachedRows = localStorage.getItem('mw_sheet_rows');
@@ -266,8 +396,8 @@
 
       if (cachedRows) {
         rawSheetRows = JSON.parse(cachedRows);
-        initDropdowns();
-        renderHierarchy();
+        initAllDropdowns();
+        p1RenderHierarchy();
         updateKPI();
         if (cachedTime) document.getElementById('sync-time').innerText = cachedTime;
       }
@@ -293,8 +423,9 @@
           localStorage.setItem('mw_sheet_rows', JSON.stringify(rawSheetRows));
           localStorage.setItem('mw_last_sync', now);
 
-          initDropdowns();
-          renderHierarchy();
+          initAllDropdowns();
+          p1RenderHierarchy();
+          if (currentPage === 2) p2OnKabChange();
           updateKPI();
 
           document.getElementById('sync-time').innerText = now;
@@ -306,82 +437,93 @@
         });
     }
 
+    function switchPage(pageNum) {
+      currentPage = pageNum;
+      const btn1 = document.getElementById('tab-btn-1');
+      const btn2 = document.getElementById('tab-btn-2');
+      const p1 = document.getElementById('page-1');
+      const p2 = document.getElementById('page-2');
+
+      if (pageNum === 1) {
+        p1.classList.remove('hidden');
+        p2.classList.add('hidden');
+        btn1.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 bg-indigo-600 text-white shadow-md shadow-indigo-600/30";
+        btn2.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 text-slate-400 hover:text-white";
+      } else {
+        p2.classList.remove('hidden');
+        p1.classList.add('hidden');
+        btn2.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 bg-emerald-600 text-white shadow-md shadow-emerald-600/30";
+        btn1.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 text-slate-400 hover:text-white";
+      }
+    }
+
     function updateKPI() {
       const pulauSet = new Set(rawSheetRows.map(r => r[1]).filter(Boolean));
       const provSet = new Set(rawSheetRows.map(r => r[2]).filter(Boolean));
       const kabSet = new Set(rawSheetRows.map(r => r[3]).filter(Boolean));
       const eksSet = new Set(rawSheetRows.map(r => r[4]).filter(Boolean));
 
-      document.getElementById('kpi-pulau').innerText = pulauSet.size;
-      document.getElementById('kpi-provinsi').innerText = provSet.size;
-      document.getElementById('kpi-kabupaten').innerText = kabSet.size;
-      document.getElementById('kpi-ekspedisi').innerText = eksSet.size;
+      document.getElementById('p1-kpi-pulau').innerText = pulauSet.size;
+      document.getElementById('p1-kpi-provinsi').innerText = provSet.size;
+      document.getElementById('p1-kpi-kabupaten').innerText = kabSet.size;
+      document.getElementById('p1-kpi-ekspedisi').innerText = eksSet.size;
     }
 
-    function initDropdowns() {
-      const selectPulau = document.getElementById('select-pulau');
+    function initAllDropdowns() {
       const pulaus = [...new Set(rawSheetRows.map(r => r[1]).filter(Boolean))].sort();
 
-      const currentVal = selectPulau.value;
-      selectPulau.innerHTML = '<option value="">-- Semua Pulau --</option>';
-      pulaus.forEach(p => {
-        selectPulau.innerHTML += `<option value="${p}">${p}</option>`;
+      ['p1-select-pulau', 'p2-select-pulau'].forEach(id => {
+        const el = document.getElementById(id);
+        const cur = el.value;
+        el.innerHTML = '<option value="">-- Pilih Pulau --</option>';
+        pulaus.forEach(p => el.innerHTML += `<option value="${p}">${p}</option>`);
+        el.value = cur;
       });
-      selectPulau.value = currentVal;
     }
 
-    function onPulauChange() {
-      const selectedPulau = document.getElementById('select-pulau').value;
-      const selectProv = document.getElementById('select-provinsi');
-      const selectKab = document.getElementById('select-kabupaten');
+    // HALAMAN 1 LOGIC
+    function p1OnPulauChange() {
+      const pVal = document.getElementById('p1-select-pulau').value;
+      const selectProv = document.getElementById('p1-select-prov');
+      const selectKab = document.getElementById('p1-select-kab');
 
       selectProv.innerHTML = '<option value="">-- Semua Provinsi --</option>';
       selectKab.innerHTML = '<option value="">-- Semua Kab / Kota --</option>';
       selectKab.disabled = true;
 
-      if (!selectedPulau) {
+      if (!pVal) {
         selectProv.disabled = true;
       } else {
         selectProv.disabled = false;
-        const provs = [...new Set(rawSheetRows.filter(r => r[1] === selectedPulau).map(r => r[2]))].sort();
-        provs.forEach(pr => {
-          selectProv.innerHTML += `<option value="${pr}">${pr}</option>`;
-        });
+        const provs = [...new Set(rawSheetRows.filter(r => r[1] === pVal).map(r => r[2]))].sort();
+        provs.forEach(pr => selectProv.innerHTML += `<option value="${pr}">${pr}</option>`);
       }
-      renderHierarchy();
+      p1RenderHierarchy();
     }
 
-    function onProvinsiChange() {
-      const selectedPulau = document.getElementById('select-pulau').value;
-      const selectedProv = document.getElementById('select-provinsi').value;
-      const selectKab = document.getElementById('select-kabupaten');
+    function p1OnProvChange() {
+      const pVal = document.getElementById('p1-select-pulau').value;
+      const prVal = document.getElementById('p1-select-prov').value;
+      const selectKab = document.getElementById('p1-select-kab');
 
       selectKab.innerHTML = '<option value="">-- Semua Kab / Kota --</option>';
 
-      if (!selectedProv) {
+      if (!prVal) {
         selectKab.disabled = true;
       } else {
         selectKab.disabled = false;
-        const kabs = [...new Set(rawSheetRows.filter(r => r[1] === selectedPulau && r[2] === selectedProv).map(r => r[3]))].sort();
-        kabs.forEach(kb => {
-          selectKab.innerHTML += `<option value="${kb}">${kb}</option>`;
-        });
+        const kabs = [...new Set(rawSheetRows.filter(r => r[1] === pVal && r[2] === prVal).map(r => r[3]))].sort();
+        kabs.forEach(kb => selectKab.innerHTML += `<option value="${kb}">${kb}</option>`);
       }
-      renderHierarchy();
+      p1RenderHierarchy();
     }
 
-    function onKabupatenChange() {
-      renderHierarchy();
-    }
+    function p1RenderHierarchy() {
+      const pVal = document.getElementById('p1-select-pulau').value;
+      const prVal = document.getElementById('p1-select-prov').value;
+      const kbVal = document.getElementById('p1-select-kab').value;
+      const qVal = (document.getElementById('p1-search')?.value || '').toLowerCase();
 
-    // Render Hirarki (Pulau -> Provinsi -> Kota/Kab) Accordion
-    function renderHierarchy() {
-      const pVal = document.getElementById('select-pulau').value;
-      const prVal = document.getElementById('select-provinsi').value;
-      const kbVal = document.getElementById('select-kabupaten').value;
-      const qVal = (document.getElementById('quick-search')?.value || '').toLowerCase();
-
-      // Kelompokkan Data secara Hirarkis: Map<Pulau, Map<Provinsi, Set<Kab>>>
       const hierarchy = new Map();
       let totalKabCount = 0;
 
@@ -406,98 +548,361 @@
           kabMap.set(kab, 0);
           totalKabCount++;
         }
-        if (r[4]) kabMap.set(kab, kabMap.get(kab) + 1); // Hitung layanan ekspedisi
+        if (r[4]) kabMap.set(kab, kabMap.get(kab) + 1);
       });
 
-      document.getElementById('count-badge').innerText = totalKabCount;
+      document.getElementById('p1-count-badge').innerText = totalKabCount;
+      const container = document.getElementById('p1-hierarchy-container');
 
-      const container = document.getElementById('hierarchy-container');
       if (hierarchy.size === 0) {
-        container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-400 border">Tidak ada data wilayah yang sesuai.</div>`;
+        container.innerHTML = `<div class="bg-slate-800/40 p-8 rounded-2xl text-center text-slate-500 border border-slate-700/50">Tidak ada wilayah yang cocok.</div>`;
         return;
       }
 
       let html = '';
-      let pulauIndex = 0;
+      let pIdx = 0;
 
       hierarchy.forEach((provMap, pulauName) => {
-        pulauIndex++;
-        const pulauId = `pulau-acc-${pulauIndex}`;
-        
-        // Hitung total kab di pulau ini
+        pIdx++;
+        const pId = `p1-pacc-${pIdx}`;
         let countInPulau = 0;
         provMap.forEach(kMap => countInPulau += kMap.size);
 
         html += `
-          <!-- LEVEL 1: ACCORDION PULAU -->
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <button onclick="toggleAccordion('${pulauId}')" class="w-full bg-slate-800 text-white p-4 flex justify-between items-center hover:bg-slate-700 transition-colors">
+          <div class="bg-slate-800/50 rounded-2xl border border-slate-700/60 overflow-hidden shadow-lg">
+            <button onclick="toggleAcc('${pId}')" class="w-full bg-slate-950 p-4 flex justify-between items-center hover:bg-slate-900 transition-colors">
               <div class="flex items-center gap-3">
-                <i class="fa-solid fa-earth-asia text-amber-400 text-xl"></i>
-                <h3 class="font-bold text-lg tracking-wide uppercase">${pulauName}</h3>
-                <span class="bg-slate-700 text-amber-300 text-xs px-2.5 py-0.5 rounded-full font-medium">${provMap.size} Provinsi • ${countInPulau} Kab/Kota</span>
+                <i class="fa-solid fa-earth-asia text-amber-400 text-lg"></i>
+                <h3 class="font-bold text-base text-white tracking-wide uppercase">${pulauName}</h3>
+                <span class="bg-slate-800 text-amber-300 text-xs px-2.5 py-0.5 rounded-full font-medium border border-slate-700">${provMap.size} Provinsi • ${countInPulau} Kab/Kota</span>
               </div>
-              <i class="fa-solid fa-chevron-down text-slate-300 transition-transform duration-300" id="icon-${pulauId}"></i>
+              <i class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300" id="icon-${pId}"></i>
             </button>
 
-            <div id="${pulauId}" class="p-4 space-y-4 bg-slate-50 border-t border-slate-200">
+            <div id="${pId}" class="p-4 space-y-4 bg-slate-900/60 border-t border-slate-800">
         `;
 
-        let provIndex = 0;
+        let prIdx = 0;
         provMap.forEach((kabMap, provName) => {
-          provIndex++;
-          const provId = `${pulauId}-prov-${provIndex}`;
+          prIdx++;
+          const prId = `${pId}-pracc-${prIdx}`;
 
           html += `
-            <!-- LEVEL 2: ACCORDION PROVINSI -->
-            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-              <button onclick="toggleAccordion('${provId}')" class="w-full bg-indigo-50/70 p-3 flex justify-between items-center hover:bg-indigo-100/70 transition-colors">
+            <div class="bg-slate-900/80 rounded-xl border border-slate-800 overflow-hidden">
+              <button onclick="toggleAcc('${prId}')" class="w-full bg-slate-800/60 p-3 flex justify-between items-center hover:bg-slate-800 transition-colors">
                 <div class="flex items-center gap-2">
-                  <i class="fa-solid fa-map-pin text-indigo-600 text-sm"></i>
-                  <span class="font-bold text-slate-800 text-sm">${provName}</span>
-                  <span class="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-medium">${kabMap.size} Kab/Kota</span>
+                  <i class="fa-solid fa-map-pin text-indigo-400 text-xs"></i>
+                  <span class="font-bold text-slate-200 text-xs">${provName}</span>
+                  <span class="bg-indigo-500/20 text-indigo-300 text-[11px] px-2 py-0.5 rounded-full font-medium border border-indigo-500/30">${kabMap.size} Kab/Kota</span>
                 </div>
-                <i class="fa-solid fa-chevron-down text-indigo-400 transition-transform duration-300 text-xs" id="icon-${provId}"></i>
+                <i class="fa-solid fa-chevron-down text-slate-500 transition-transform duration-300 text-xs" id="icon-${prId}"></i>
               </button>
 
-              <div id="${provId}" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div id="${prId}" class="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           `;
 
-          // LEVEL 3: KARTU KABUPATEN / KOTA
           kabMap.forEach((layananCount, kabName) => {
             html += `
-              <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between hover:border-indigo-300 transition-colors">
-                <div>
-                  <div class="flex justify-between items-start gap-2 mb-1">
-                    <h5 class="font-bold text-slate-800 text-sm leading-snug">${kabName}</h5>
-                    <span class="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">${layananCount} Layanan</span>
-                  </div>
+              <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex flex-col justify-between hover:border-indigo-500/50 transition-colors">
+                <div class="flex justify-between items-start gap-2 mb-2">
+                  <h5 class="font-bold text-slate-200 text-xs leading-snug">${kabName}</h5>
+                  <span class="text-[10px] font-semibold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">${layananCount} Layanan</span>
                 </div>
-                <button onclick="openEkspedisiModal('${kabName.replace(/'/g, "\\'")}', '${provName.replace(/'/g, "\\'")}', '${pulauName.replace(/'/g, "\\'")}')" 
-                        class="mt-3 w-full py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5">
-                  <i class="fa-solid fa-eye"></i> Lihat Ekspedisi
+                <button onclick="openViewModal('${kabName.replace(/'/g, "\\'")}', '${provName.replace(/'/g, "\\'")}', '${pulauName.replace(/'/g, "\\'")}')" 
+                        class="mt-2 w-full py-1.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20">
+                  <i class="fa-solid fa-eye"></i> Lihat Tarif & Detail (G-Q)
                 </button>
               </div>
             `;
           });
 
-          html += `
-              </div>
-            </div>
-          `;
+          html += `</div></div>`;
         });
 
-        html += `
-            </div>
-          </div>
-        `;
+        html += `</div></div>`;
       });
 
       container.innerHTML = html;
     }
 
-    // Toggle Accordion (Tarik/Tutup Atas Bawah)
-    function toggleAccordion(id) {
+    function openViewModal(kab, prov, pulau) {
+      document.getElementById('vmodal-kab-name').innerText = kab;
+      document.getElementById('vmodal-subtitle').innerText = `${pulau} • ${prov}`;
+
+      let matched = [];
+      rawSheetRows.forEach(r => {
+        if (String(r[3] || '').toLowerCase() === kab.toLowerCase()) {
+          let rawPrice = String(r[9] || r[8] || '0').replace(/[^0-9]/g, '');
+          let priceNum = parseInt(rawPrice) || 999999999;
+          matched.push({ row: r, priceNum: priceNum });
+        }
+      });
+
+      matched.sort((a, b) => a.priceNum - b.priceNum);
+
+      const tbody = document.getElementById('vmodal-table-body');
+      if (matched.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-500">Belum ada data ekspedisi untuk <strong>${kab}</strong>.</td></tr>`;
+      } else {
+        tbody.innerHTML = matched.map(item => {
+          const r = item.row;
+          const isFrozen = String((r[5]||'') + ' ' + (r[6]||'')).toLowerCase().includes('frozen');
+          const badgeColor = isFrozen ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' : 'bg-slate-800 text-slate-400 border-slate-700';
+
+          return `
+            <tr class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-3 font-bold text-white">${r[4] || '-'}</td>
+              <td class="p-3"><span class="px-2 py-0.5 text-[10px] font-semibold rounded border ${badgeColor}">${r[5] || '-'}</span></td>
+              <td class="p-3 text-slate-300">${r[6] || '-'}</td>
+              <td class="p-3 text-slate-400">${r[7] || '-'}</td>
+              <td class="p-3 text-slate-400">${r[8] || '-'}</td>
+              <td class="p-3 font-bold text-emerald-400 bg-slate-900/40">${r[9] || r[8] || '-'}</td>
+              <td class="p-3 text-slate-300">${r[10] || '-'}</td>
+              <td class="p-3 text-slate-400 max-w-xs truncate" title="${r[11]||''}">${r[11] || '-'}</td>
+              <td class="p-3 text-slate-400">${r[12] || '-'}</td>
+              <td class="p-3 text-slate-400">${r[13] || '-'}</td>
+              <td class="p-3 text-slate-400">${r[14] || '-'}</td>
+              <td class="p-3 text-slate-400">${r[15] || r[16] || '-'}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const modal = document.getElementById('modal-view-detail');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeViewModal() {
+      document.getElementById('modal-view-detail').classList.add('hidden');
+      document.getElementById('modal-view-detail').classList.remove('flex');
+    }
+
+    // HALAMAN 2 LOGIC
+    function p2OnPulauChange() {
+      const pVal = document.getElementById('p2-select-pulau').value;
+      const selectProv = document.getElementById('p2-select-prov');
+      const selectKab = document.getElementById('p2-select-kab');
+
+      selectProv.innerHTML = '<option value="">-- Pilih Provinsi --</option>';
+      selectKab.innerHTML = '<option value="">-- Pilih Kab / Kota --</option>';
+      selectKab.disabled = true;
+
+      if (!pVal) {
+        selectProv.disabled = true;
+      } else {
+        selectProv.disabled = false;
+        const provs = [...new Set(rawSheetRows.filter(r => r[1] === pVal).map(r => r[2]))].sort();
+        provs.forEach(pr => selectProv.innerHTML += `<option value="${pr}">${pr}</option>`);
+      }
+      p2RenderTable();
+    }
+
+    function p2OnProvChange() {
+      const pVal = document.getElementById('p2-select-pulau').value;
+      const prVal = document.getElementById('p2-select-prov').value;
+      const selectKab = document.getElementById('p2-select-kab');
+
+      selectKab.innerHTML = '<option value="">-- Pilih Kab / Kota --</option>';
+
+      if (!prVal) {
+        selectKab.disabled = true;
+      } else {
+        selectKab.disabled = false;
+        const kabs = [...new Set(rawSheetRows.filter(r => r[1] === pVal && r[2] === prVal).map(r => r[3]))].sort();
+        kabs.forEach(kb => selectKab.innerHTML += `<option value="${kb}">${kb}</option>`);
+      }
+      p2RenderTable();
+    }
+
+    function p2OnKabChange() {
+      p2RenderTable();
+    }
+
+    function p2RenderTable() {
+      const pVal = document.getElementById('p2-select-pulau').value;
+      const prVal = document.getElementById('p2-select-prov').value;
+      const kbVal = document.getElementById('p2-select-kab').value;
+
+      const wrapper = document.getElementById('p2-table-wrapper');
+      const placeholder = document.getElementById('p2-placeholder');
+
+      if (!pVal || !prVal || !kbVal) {
+        wrapper.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        return;
+      }
+
+      wrapper.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      document.getElementById('p2-target-title').innerText = `${kbVal} (${prVal}, ${pVal})`;
+
+      const matched = [];
+      rawSheetRows.forEach((r, idx) => {
+        if (r[1] === pVal && r[2] === prVal && String(r[3]||'').toLowerCase() === kbVal.toLowerCase()) {
+          matched.push({ row: r, index: idx });
+        }
+      });
+
+      document.getElementById('p2-row-count').innerText = `${matched.length} Baris Data`;
+      const tbody = document.getElementById('p2-table-body');
+
+      if (matched.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Belum ada baris data untuk daerah ini. Silakan klik "Tambah Data Baru".</td></tr>`;
+      } else {
+        tbody.innerHTML = matched.map(item => {
+          const r = item.row;
+          const idx = item.index;
+
+          return `
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="p-3 font-bold text-white">${r[4] || '-'}</td>
+              <td class="p-3 text-slate-300">${r[5] || '-'}</td>
+              <td class="p-3 text-slate-300">${r[6] || '-'}</td>
+              <td class="p-3 text-slate-400">${r[7] || '-'}</td>
+              <td class="p-3 text-slate-400">${r[8] || '-'}</td>
+              <td class="p-3 font-bold text-emerald-400">${r[9] || '-'}</td>
+              <td class="p-3 text-slate-300">${r[10] || '-'}</td>
+              <td class="p-3 text-slate-400 max-w-xs truncate" title="${r[11]||''}">${r[11] || '-'}</td>
+              <td class="p-3 text-center">
+                <button onclick="openEditModal(${idx})" class="px-3 py-1 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 rounded-lg text-xs font-semibold transition-all">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit Baris Ini
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    function openEditModal(index) {
+      const r = rawSheetRows[index];
+      document.getElementById('form-action-type').value = "edit";
+      document.getElementById('form-row-index').value = index;
+      document.getElementById('form-modal-title').innerText = "Edit Baris Data Sheet";
+
+      document.getElementById('f-pulau').value = r[1] || '';
+      document.getElementById('f-prov').value = r[2] || '';
+      document.getElementById('f-kab').value = r[3] || '';
+      document.getElementById('f-ekspedisi').value = r[4] || '';
+      document.getElementById('f-armada').value = r[5] || '';
+      document.getElementById('f-layanan').value = r[6] || '';
+      document.getElementById('f-rate-h').value = r[7] || '';
+      document.getElementById('f-cost-i').value = r[8] || '';
+      document.getElementById('f-cost-j').value = r[9] || '';
+      document.getElementById('f-paket-k').value = r[10] || '';
+      document.getElementById('f-ket-l').value = r[11] || '';
+      document.getElementById('f-ptd-m').value = r[12] || '';
+      document.getElementById('f-cost-n').value = r[13] || '';
+      document.getElementById('f-cost-o').value = r[14] || '';
+      document.getElementById('f-ket-p').value = r[15] || r[16] || '';
+
+      const modal = document.getElementById('modal-form-editor');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function openAddModal() {
+      document.getElementById('form-action-type').value = "add";
+      document.getElementById('form-row-index').value = "";
+      document.getElementById('form-modal-title').innerText = "Tambah Data Ekspedisi Baru";
+
+      document.getElementById('f-pulau').value = document.getElementById('p2-select-pulau').value || '';
+      document.getElementById('f-prov').value = document.getElementById('p2-select-prov').value || '';
+      document.getElementById('f-kab').value = document.getElementById('p2-select-kab').value || '';
+
+      document.getElementById('f-ekspedisi').value = '';
+      document.getElementById('f-armada').value = '';
+      document.getElementById('f-layanan').value = '';
+      document.getElementById('f-rate-h').value = '';
+      document.getElementById('f-cost-i').value = '';
+      document.getElementById('f-cost-j').value = '';
+      document.getElementById('f-paket-k').value = '';
+      document.getElementById('f-ket-l').value = '';
+      document.getElementById('f-ptd-m').value = '';
+      document.getElementById('f-cost-n').value = '';
+      document.getElementById('f-cost-o').value = '';
+      document.getElementById('f-ket-p').value = '';
+
+      const modal = document.getElementById('modal-form-editor');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeFormModal() {
+      document.getElementById('modal-form-editor').classList.add('hidden');
+      document.getElementById('modal-form-editor').classList.remove('flex');
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('form-submit-btn');
+      btn.innerText = "Menyimpan ke Sheets...";
+      btn.disabled = true;
+
+      const actionType = document.getElementById('form-action-type').value;
+      const index = parseInt(document.getElementById('form-row-index').value);
+
+      let newRow = [];
+      if (actionType === "edit" && rawSheetRows[index]) {
+        newRow = [...rawSheetRows[index]];
+      } else {
+        newRow = new Array(17).fill('');
+        newRow[0] = rawSheetRows.length + 1;
+      }
+
+      newRow[1] = document.getElementById('f-pulau').value;
+      newRow[2] = document.getElementById('f-prov').value;
+      newRow[3] = document.getElementById('f-kab').value;
+      newRow[4] = document.getElementById('f-ekspedisi').value;
+      newRow[5] = document.getElementById('f-armada').value;
+      newRow[6] = document.getElementById('f-layanan').value;
+      newRow[7] = document.getElementById('f-rate-h').value;
+      newRow[8] = document.getElementById('f-cost-i').value;
+      newRow[9] = document.getElementById('f-cost-j').value;
+      newRow[10] = document.getElementById('f-paket-k').value;
+      newRow[11] = document.getElementById('f-ket-l').value;
+      newRow[12] = document.getElementById('f-ptd-m').value;
+      newRow[13] = document.getElementById('f-cost-n').value;
+      newRow[14] = document.getElementById('f-cost-o').value;
+      newRow[15] = document.getElementById('f-ket-p').value;
+
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: actionType, rowIndex: index, rowData: newRow })
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (actionType === "edit") {
+          rawSheetRows[index] = newRow;
+        } else {
+          rawSheetRows.push(newRow);
+        }
+
+        const now = res.lastUpdated || new Date().toLocaleTimeString('id-ID') + ' WIB';
+        localStorage.setItem('mw_sheet_rows', JSON.stringify(rawSheetRows));
+        localStorage.setItem('mw_last_sync', now);
+
+        document.getElementById('sync-time').innerText = now;
+        btn.innerText = "Simpan Perubahan Ke Sheet";
+        btn.disabled = false;
+
+        closeFormModal();
+        initAllDropdowns();
+        p1RenderHierarchy();
+        p2RenderTable();
+        updateKPI();
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Gagal menyimpan ke Google Sheets.");
+        btn.innerText = "Simpan Perubahan Ke Sheet";
+        btn.disabled = false;
+      });
+    }
+
+    function toggleAcc(id) {
       const el = document.getElementById(id);
       const icon = document.getElementById(`icon-${id}`);
       if (!el) return;
@@ -511,9 +916,9 @@
       }
     }
 
-    function toggleAllAccordions(open) {
-      const allAccordions = document.querySelectorAll('#hierarchy-container [id^="pulau-acc-"]');
-      allAccordions.forEach(el => {
+    function p1ToggleAll(open) {
+      const accs = document.querySelectorAll('#p1-hierarchy-container [id^="p1-pacc-"]');
+      accs.forEach(el => {
         const icon = document.getElementById(`icon-${el.id}`);
         if (open) {
           el.classList.remove('hidden');
@@ -522,136 +927,6 @@
           el.classList.add('hidden');
           if (icon) icon.classList.remove('rotate-180');
         }
-      });
-    }
-
-    function openEkspedisiModal(kab, prov, pulau) {
-      currentSelectedKab = kab;
-      document.getElementById('modal-kab-name').innerText = kab;
-      document.getElementById('modal-subtitle').innerText = `${pulau} • ${prov}`;
-
-      const matchedRows = [];
-      rawSheetRows.forEach((r, idx) => {
-        if (String(r[3] || '').toLowerCase() === kab.toLowerCase()) {
-          matchedRows.push({ row: r, index: idx });
-        }
-      });
-
-      const tbody = document.getElementById('modal-table-body');
-      if (matchedRows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Belum ada data ekspedisi untuk <strong>${kab}</strong>.</td></tr>`;
-      } else {
-        tbody.innerHTML = matchedRows.map(item => {
-          const r = item.row;
-          const originalIndex = item.index;
-
-          const ekspedisi = r[4] || '-';
-          const armada = r[5] || '-';
-          const layanan = r[6] || '-';
-          const harga = r[9] || r[8] || '-';
-          const estimasi = r[10] || '-';
-
-          const isFrozen = String(armada + ' ' + layanan).toLowerCase().includes('frozen');
-          const badgeColor = isFrozen ? 'bg-cyan-100 text-cyan-700' : 'bg-slate-100 text-slate-700';
-
-          return `
-            <tr class="hover:bg-slate-50">
-              <td class="p-3 font-bold text-slate-800">${ekspedisi}</td>
-              <td class="p-3"><span class="px-2 py-0.5 text-[11px] font-bold rounded-full ${badgeColor}">${armada}</span></td>
-              <td class="p-3 text-slate-600">${layanan}</td>
-              <td class="p-3 font-semibold text-emerald-600">${harga}</td>
-              <td class="p-3 text-slate-500">${estimasi}</td>
-              <td class="p-3 text-center">
-                <button onclick="openEditModal(${originalIndex})" class="px-3 py-1 bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-600 text-xs font-semibold rounded-lg transition-colors">
-                  <i class="fa-solid fa-pen"></i> Edit
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      }
-
-      const modal = document.getElementById('modal-ekspedisi');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closeEkspedisiModal() {
-      const modal = document.getElementById('modal-ekspedisi');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-
-    function openEditModal(index) {
-      const r = rawSheetRows[index];
-      document.getElementById('edit-row-index').value = index;
-      document.getElementById('edit-pulau').value = r[1] || '';
-      document.getElementById('edit-provinsi').value = r[2] || '';
-      document.getElementById('edit-kab').value = r[3] || '';
-      document.getElementById('edit-ekspedisi').value = r[4] || '';
-      document.getElementById('edit-armada').value = r[5] || '';
-      document.getElementById('edit-layanan').value = r[6] || '';
-      document.getElementById('edit-harga').value = r[9] || r[8] || '';
-      document.getElementById('edit-estimasi').value = r[10] || '';
-
-      const modal = document.getElementById('modal-edit');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closeEditModal() {
-      const modal = document.getElementById('modal-edit');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-    }
-
-    function saveEdit(e) {
-      e.preventDefault();
-      const btn = document.getElementById('save-btn');
-      btn.innerText = "Menyimpan...";
-      btn.disabled = true;
-
-      const index = parseInt(document.getElementById('edit-row-index').value);
-      const oldRow = [...rawSheetRows[index]];
-
-      oldRow[1] = document.getElementById('edit-pulau').value;
-      oldRow[2] = document.getElementById('edit-provinsi').value;
-      oldRow[3] = document.getElementById('edit-kab').value;
-      oldRow[4] = document.getElementById('edit-ekspedisi').value;
-      oldRow[5] = document.getElementById('edit-armada').value;
-      oldRow[6] = document.getElementById('edit-layanan').value;
-      oldRow[9] = document.getElementById('edit-harga').value;
-      oldRow[10] = document.getElementById('edit-estimasi').value;
-
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ rowIndex: index, rowData: oldRow })
-      })
-      .then(res => res.json())
-      .then(res => {
-        rawSheetRows[index] = oldRow;
-        const now = res.lastUpdated || new Date().toLocaleTimeString('id-ID') + ' WIB';
-
-        localStorage.setItem('mw_sheet_rows', JSON.stringify(rawSheetRows));
-        localStorage.setItem('mw_last_sync', now);
-
-        document.getElementById('sync-time').innerText = now;
-        btn.innerText = "Simpan Ke Sheet";
-        btn.disabled = false;
-
-        closeEditModal();
-
-        if (currentSelectedKab) {
-          openEkspedisiModal(currentSelectedKab, '', '');
-        }
-        renderHierarchy();
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Gagal menyimpan ke Google Sheets.");
-        btn.innerText = "Simpan Ke Sheet";
-        btn.disabled = false;
       });
     }
   </script>
