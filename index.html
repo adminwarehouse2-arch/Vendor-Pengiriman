@@ -3,404 +3,231 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LogiMap ID - Peta Logistik Indonesia</title>
+  <title>Dashboard Master Ekspedisi & Wilayah</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    @keyframes pulse-pin {
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.4); opacity: 0.6; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    .pin-pulse {
-      animation: pulse-pin 2s infinite ease-in-out;
-      transform-origin: center;
-    }
-    .island-path {
-      transition: all 0.25s ease;
-      cursor: pointer;
-    }
-    .island-path:hover {
-      filter: brightness(1.2) drop-shadow(0px 4px 12px rgba(255,255,255,0.3));
-    }
-  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col">
+<body class="bg-slate-50 font-sans text-slate-800">
 
   <!-- Header -->
-  <header class="bg-slate-800/90 border-b border-slate-700 backdrop-blur sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-lg">
-          <i class="fa-solid fa-map-location-dot text-xl"></i>
-        </div>
-        <div>
-          <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">LogiMap ID</h1>
-          <p class="text-xs text-slate-400">Peta & Sistem Informasi Ekspedisi Indonesia</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-2">
-        <button onclick="switchTab('map')" id="btn-map" class="px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white transition">
-          <i class="fa-solid fa-map mr-1.5"></i> Peta Interaktif
-        </button>
-        <button onclick="switchTab('manage')" id="btn-manage" class="px-4 py-2 text-sm font-semibold rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition">
-          <i class="fa-solid fa-pen-to-square mr-1.5"></i> Kelola Data
-        </button>
-      </div>
+  <header class="bg-indigo-600 text-white shadow-lg p-5">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <h1 class="text-2xl font-bold flex items-center gap-2">
+        <i class="fa-solid fa-truck-fast"></i> Dashboard Ekspedisi & Master Wilayah
+      </h1>
+      <span class="text-sm bg-indigo-700 px-3 py-1 rounded-full border border-indigo-500">Live Sheets Sync</span>
     </div>
   </header>
 
-  <!-- Main Content Area -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 flex flex-col">
-
-    <!-- View 1: Peta Interaktif -->
-    <div id="view-map" class="flex-1 flex flex-col gap-4">
-      
-      <!-- Control Panel -->
-      <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700 flex flex-wrap gap-4 items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Berat Paket:</label>
-          <input type="number" id="weight-input" value="1" min="1" max="100" class="w-20 bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-center font-bold text-indigo-400 focus:outline-none focus:border-indigo-500" onchange="updateRates()">
-          <span class="text-sm text-slate-300 font-medium">Kg</span>
-        </div>
-        
-        <!-- Legend Peta -->
-        <div class="flex flex-wrap gap-3 text-xs">
-          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#F1C40F]"></span> Sumatera</span>
-          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#E74C3C]"></span> Jawa</span>
-          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#2ECC71]"></span> Kalimantan</span>
-          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#3498DB]"></span> Sulawesi & Nusa Tenggara</span>
-          <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#E67E22]"></span> Papua & Maluku</span>
-        </div>
+  <main class="max-w-7xl mx-auto p-6">
+    <!-- Stat Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="text-slate-500 text-sm font-medium">Total Ekspedisi</div>
+        <div id="stat-ekspedisi" class="text-3xl font-bold text-indigo-600 mt-1">0</div>
       </div>
-
-      <!-- Map Viewport -->
-      <div class="relative bg-gradient-to-b from-sky-950 via-slate-900 to-slate-950 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl flex-1 min-h-[500px] flex items-center justify-center p-4">
-        
-        <!-- Detailed SVG Map -->
-        <svg id="indonesia-svg" viewBox="0 0 1000 450" class="w-full h-auto max-h-[600px] drop-shadow-xl">
-          
-          <!-- SUMATERA (Kuning #F1C40F) -->
-          <path class="island-path" fill="#F1C40F" d="M 42,125 Q 55,100 80,75 L 105,50 Q 120,40 135,55 L 175,90 Q 210,120 240,150 L 290,210 Q 315,240 310,270 L 295,300 Q 280,315 255,290 L 220,260 Q 180,225 140,190 L 80,155 Q 50,140 42,125 Z"/>
-          <!-- Pulau sekitar Sumatera (Batam, Bangka, Belitung) -->
-          <circle cx="230" cy="120" r="5" fill="#F1C40F"/>
-          <path fill="#F1C40F" d="M 260,220 Q 275,210 280,230 L 270,250 Z"/>
-          <circle cx="295" cy="245" r="4" fill="#F1C40F"/>
-
-          <!-- KALIMANTAN (Hijau #2ECC71) -->
-          <path class="island-path" fill="#2ECC71" d="M 360,140 Q 380,80 430,70 Q 480,65 520,95 L 545,130 Q 550,170 535,210 L 515,255 Q 480,285 435,275 L 390,255 Q 355,225 360,170 Z"/>
-
-          <!-- SULAWESI (Biru #3498DB) -->
-          <path class="island-path" fill="#3498DB" d="M 575,150 L 610,145 Q 630,140 645,125 L 675,120 Q 660,145 635,155 L 620,185 Q 655,185 680,195 L 685,210 Q 650,210 625,200 L 620,240 Q 640,265 650,290 L 635,295 Q 615,265 605,240 L 590,280 Q 575,280 575,260 L 595,210 Q 570,185 575,150 Z"/>
-
-          <!-- JAWA (Merah #E74C3C) -->
-          <path class="island-path" fill="#E74C3C" d="M 305,335 Q 350,330 400,332 L 460,335 Q 510,338 540,342 L 545,355 Q 490,358 430,355 L 360,352 Q 310,350 300,345 Z"/>
-
-          <!-- BALI & NUSA TENGGARA (Biru #3498DB) -->
-          <!-- Bali -->
-          <path class="island-path" fill="#3498DB" d="M 552,345 Q 562,343 567,352 L 558,356 Z"/>
-          <!-- Lombok -->
-          <path class="island-path" fill="#3498DB" d="M 573,346 Q 583,345 586,354 L 576,357 Z"/>
-          <!-- Sumbawa -->
-          <path class="island-path" fill="#3498DB" d="M 592,346 Q 620,345 625,355 L 595,358 Z"/>
-          <!-- Flores & Sumba -->
-          <path class="island-path" fill="#3498DB" d="M 635,348 Q 685,345 695,355 L 640,360 Z M 625,365 Q 650,365 655,373 L 630,375 Z"/>
-          <!-- Timor -->
-          <path class="island-path" fill="#3498DB" d="M 705,355 Q 735,340 745,352 L 720,368 Z"/>
-
-          <!-- PAPUA & MALUKU (Oranye #E67E22) -->
-          <!-- Maluku -->
-          <path fill="#E67E22" d="M 700,165 Q 720,160 725,180 L 705,190 Z M 710,210 Q 735,210 740,230 L 715,235 Z"/>
-          <!-- Papua Body -->
-          <path class="island-path" fill="#E67E22" d="M 770,185 Q 795,175 815,195 L 835,200 Q 860,190 890,210 L 970,225 L 975,340 Q 900,345 870,300 L 845,260 Q 820,240 780,230 L 765,205 Z"/>
-
-          <!-- PIN LOCATIONS -->
-          <g id="map-pins-container"></g>
-        </svg>
-
-        <div class="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-slate-300">
-          <i class="fa-solid fa-hand-pointer mr-1.5 text-indigo-400"></i> Klik titik kota untuk membuka info & tarif ekspedisi
-        </div>
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="text-slate-500 text-sm font-medium">Total Wilayah Coverage</div>
+        <div id="stat-wilayah" class="text-3xl font-bold text-emerald-600 mt-1">0</div>
+      </div>
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="text-slate-500 text-sm font-medium">Layanan Frozen</div>
+        <div id="stat-frozen" class="text-3xl font-bold text-cyan-600 mt-1">0</div>
+      </div>
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <div class="text-slate-500 text-sm font-medium">Layanan Non-Frozen</div>
+        <div id="stat-nonfrozen" class="text-3xl font-bold text-amber-600 mt-1">0</div>
       </div>
     </div>
 
-    <!-- View 2: Kelola Data -->
-    <div id="view-manage" class="hidden flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-5">
-        <h3 class="text-lg font-bold text-white mb-4 flex items-center">
-          <i class="fa-solid fa-location-dot text-indigo-400 mr-2"></i> Tambah / Edit Lokasi Kota
-        </h3>
-        <form id="form-location" onsubmit="handleSaveLocation(event)" class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Nama Kota/Kabupaten</label>
-            <input type="text" id="loc-name" required placeholder="Contoh: Banjarmasin" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Provinsi / Wilayah</label>
-            <input type="text" id="loc-region" required placeholder="Contoh: Kalimantan Selatan" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Posisi X (0-1000)</label>
-              <input type="number" id="loc-x" min="0" max="1000" required placeholder="450" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Posisi Y (0-450)</label>
-              <input type="number" id="loc-y" min="0" max="450" required placeholder="240" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-            </div>
-          </div>
-          <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg text-sm transition">
-            <i class="fa-solid fa-plus mr-1"></i> Simpan Lokasi
-          </button>
-        </form>
+    <!-- Filter & Pencarian -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-wrap gap-4 items-center justify-between">
+      <div class="relative flex-1 min-w-[250px]">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-slate-400"></i>
+        <input type="text" id="search-input" onkeyup="filterTable()" placeholder="Cari Ekspedisi, Daerah, Kategori..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
       </div>
+    </div>
 
-      <div class="bg-slate-800/80 border border-slate-700 rounded-xl p-5">
-        <h3 class="text-lg font-bold text-white mb-4 flex items-center">
-          <i class="fa-solid fa-truck-fast text-emerald-400 mr-2"></i> Tambah Tarif Ekspedisi
-        </h3>
-        <form id="form-rate" onsubmit="handleSaveRate(event)" class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Pilih Kota Tujuan</label>
-            <select id="rate-city" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Nama Jasa Ekspedisi</label>
-            <input type="text" id="rate-courier" required placeholder="Contoh: JNE / J&T / SiCepat" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Layanan (Service)</label>
-              <input type="text" id="rate-service" required placeholder="REG / Cargo / NextDay" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Tarif Per Kg (Rp)</label>
-              <input type="number" id="rate-price" required placeholder="25000" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Estimasi Waktu Sampai (ETA)</label>
-            <input type="text" id="rate-eta" required placeholder="2-3 Hari" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
-          </div>
-          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-lg text-sm transition">
-            <i class="fa-solid fa-plus mr-1"></i> Simpan Tarif
-          </button>
-        </form>
+    <!-- Tabel Data Master -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-slate-100 text-slate-600 text-xs font-semibold uppercase border-b">
+            <tr>
+              <th class="p-4">Ekspedisi</th>
+              <th class="p-4">Daerah</th>
+              <th class="p-4">Harga</th>
+              <th class="p-4">Satuan</th>
+              <th class="p-4">Estimasi Hari</th>
+              <th class="p-4">Kategori</th>
+              <th class="p-4 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="table-body" class="divide-y divide-slate-100 text-sm">
+            <tr><td colspan="7" class="p-8 text-center text-slate-400">Memuat data dari Google Sheets...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </main>
 
-  <!-- Modal Ekspedisi -->
-  <div id="city-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden backdrop-blur-sm">
-    <div class="bg-slate-800 border border-slate-700 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="bg-slate-900/80 px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+  <!-- Modal Edit Data -->
+  <div id="edit-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+      <h3 class="text-lg font-bold text-slate-800 mb-4">Edit Data Ekspedisi</h3>
+      <form id="edit-form" onsubmit="saveEdit(event)" class="space-y-3">
+        <input type="hidden" id="edit-row-index">
         <div>
-          <h2 id="modal-city-name" class="text-xl font-bold text-white">Banjarmasin</h2>
-          <p id="modal-region-name" class="text-xs text-indigo-400">Kalimantan Selatan</p>
+          <label class="text-xs font-semibold text-slate-600">Ekspedisi</label>
+          <input type="text" id="edit-ekspedisi" class="w-full p-2 border rounded mt-1 text-sm" required>
         </div>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-white p-2 rounded-lg text-lg">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="p-6 overflow-y-auto space-y-4 flex-1">
-        <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-lg border border-slate-700">
-          <span class="text-xs text-slate-400">Rincian Tarif Kiriman (Kg x Bobot)</span>
-          <span id="modal-weight-display" class="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">Bobot: 1 Kg</span>
+        <div>
+          <label class="text-xs font-semibold text-slate-600">Daerah</label>
+          <input type="text" id="edit-daerah" class="w-full p-2 border rounded mt-1 text-sm" required>
         </div>
-        <div id="rates-list-container" class="space-y-3"></div>
-      </div>
-      <div class="bg-slate-900/80 px-6 py-3 border-t border-slate-700 flex justify-end">
-        <button onclick="closeModal()" class="px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-semibold transition">Tutup</button>
-      </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600">Harga</label>
+          <input type="text" id="edit-harga" class="w-full p-2 border rounded mt-1 text-sm" required>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600">Satuan</label>
+          <input type="text" id="edit-satuan" class="w-full p-2 border rounded mt-1 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600">Estimasi Hari</label>
+          <input type="text" id="edit-estimasi" class="w-full p-2 border rounded mt-1 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-600">Kategori</label>
+          <input type="text" id="edit-kategori" class="w-full p-2 border rounded mt-1 text-sm">
+        </div>
+        <div class="flex justify-end gap-2 mt-5">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm bg-slate-200 rounded-lg hover:bg-slate-300">Batal</button>
+          <button type="submit" id="save-btn" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Simpan Perubahan</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <script>
-    const defaultData = {
-      locations: [
-        { id: "medan", name: "Medan", region: "Sumatera Utara", x: 130, y: 95 },
-        { id: "jakarta", name: "DKI Jakarta", region: "DKI Jakarta", x: 330, y: 340 },
-        { id: "surabaya", name: "Surabaya", region: "Jawa Timur", x: 505, y: 345 },
-        { id: "banjarmasin", name: "Banjarmasin", region: "Kalimantan Selatan", x: 450, y: 240 },
-        { id: "denpasar", name: "Denpasar", region: "Bali", x: 560, y: 352 },
-        { id: "makassar", name: "Makassar", region: "Sulawesi Selatan", x: 590, y: 260 },
-        { id: "jayapura", name: "Jayapura", region: "Papua", x: 965, y: 235 }
-      ],
-      rates: [
-        { cityId: "banjarmasin", courier: "JNE", service: "REG", price: 28000, eta: "2-3 Hari" },
-        { cityId: "banjarmasin", courier: "J&T Express", service: "EZ", price: 27000, eta: "2-3 Hari" },
-        { cityId: "banjarmasin", courier: "SiCepat", service: "GOKIL (Cargo)", price: 18000, eta: "3-4 Hari" },
-        { cityId: "denpasar", courier: "JNE", service: "REG", price: 22000, eta: "1-2 Hari" },
-        { cityId: "denpasar", courier: "Anteraja", service: "Regular", price: 20000, eta: "2 Hari" },
-        { cityId: "jakarta", courier: "JNE", service: "YES", price: 18000, eta: "1 Hari" },
-        { cityId: "jakarta", courier: "SiCepat", service: "BEST", price: 16000, eta: "1 Hari" },
-        { cityId: "surabaya", courier: "J&T Express", service: "EZ", price: 19000, eta: "1-2 Hari" },
-        { cityId: "medan", courier: "Pos Indonesia", service: "Kilat Khusus", price: 25000, eta: "2-3 Hari" },
-        { cityId: "makassar", courier: "Lion Parcel", service: "REGPACK", price: 30000, eta: "2-3 Hari" }
-      ]
-    };
+    // URL Web App dari Apps Script kamu
+    const API_URL = "https://script.google.com/macros/s/AKfycbxpd8825TPLzRBuqhwisJXB0LxiU3-FTyyuPvW-mOjqpYyORc8dJadC_VKupjiegxwCAw/exec";
+    let rawData = [];
 
-    let appData = JSON.parse(localStorage.getItem("logimap_db")) || defaultData;
+    document.addEventListener('DOMContentLoaded', loadData);
 
-    function saveData() {
-      localStorage.setItem("logimap_db", JSON.stringify(appData));
+    function loadData() {
+      fetch(API_URL + "?action=getData")
+        .then(res => res.json())
+        .then(response => {
+          rawData = response.rows;
+          renderTable(rawData);
+          calculateStats(rawData);
+        })
+        .catch(err => console.error("Error fetching data:", err));
     }
 
-    function renderMapPins() {
-      const container = document.getElementById("map-pins-container");
-      container.innerHTML = "";
+    function renderTable(rows) {
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
 
-      appData.locations.forEach(loc => {
-        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        g.setAttribute("class", "cursor-pointer group");
-        g.setAttribute("onclick", `openCityModal('${loc.id}')`);
+      rows.forEach((row, index) => {
+        const isFrozen = (row[6] || '').toLowerCase().includes('frozen') && !(row[6] || '').toLowerCase().includes('non');
+        const badgeColor = isFrozen ? 'bg-cyan-100 text-cyan-700' : 'bg-amber-100 text-amber-700';
 
-        const pulse = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        pulse.setAttribute("cx", loc.x);
-        pulse.setAttribute("cy", loc.y);
-        pulse.setAttribute("r", "10");
-        pulse.setAttribute("fill", "#6366F1");
-        pulse.setAttribute("class", "pin-pulse opacity-60");
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-4 font-semibold text-slate-800">${row[0] || '-'}</td>
+            <td class="p-4">${row[1] || '-'}</td>
+            <td class="p-4 font-medium text-emerald-600">${row[2] || '-'}</td>
+            <td class="p-4 text-slate-500">${row[3] || '-'}</td>
+            <td class="p-4 text-slate-500">${row[4] || '-'}</td>
+            <td class="p-4"><span class="px-2 py-1 text-xs rounded-full font-medium ${badgeColor}">${row[6] || 'NON-FROZEN'}</span></td>
+            <td class="p-4 text-center">
+              <button onclick="openModal(${index})" class="text-indigo-600 hover:text-indigo-800 p-2"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
 
-        const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        dot.setAttribute("cx", loc.x);
-        dot.setAttribute("cy", loc.y);
-        dot.setAttribute("r", "5");
-        dot.setAttribute("fill", "#FFFFFF");
-        dot.setAttribute("stroke", "#4338CA");
-        dot.setAttribute("stroke-width", "2");
+    function calculateStats(rows) {
+      const ekspedisiSet = new Set(rows.map(r => r[0]));
+      const daerahSet = new Set(rows.map(r => r[1]));
+      let frozenCount = 0;
+      let nonFrozenCount = 0;
 
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", loc.x);
-        text.setAttribute("y", loc.y - 10);
-        text.setAttribute("text-anchor", "middle");
-        text.setAttribute("fill", "#FFFFFF");
-        text.setAttribute("font-size", "10");
-        text.setAttribute("font-weight", "bold");
-        text.setAttribute("class", "drop-shadow pointer-events-none");
-        text.textContent = loc.name;
-
-        g.appendChild(pulse);
-        g.appendChild(dot);
-        g.appendChild(text);
-        container.appendChild(g);
+      rows.forEach(r => {
+        const cat = (r[6] || '').toUpperCase();
+        if (cat.includes('FROZEN') && !cat.includes('NON')) frozenCount++;
+        else nonFrozenCount++;
       });
 
-      populateCityDropdown();
+      document.getElementById('stat-ekspedisi').innerText = ekspedisiSet.size;
+      document.getElementById('stat-wilayah').innerText = daerahSet.size;
+      document.getElementById('stat-frozen').innerText = frozenCount;
+      document.getElementById('stat-nonfrozen').innerText = nonFrozenCount;
     }
 
-    function populateCityDropdown() {
-      const select = document.getElementById("rate-city");
-      select.innerHTML = appData.locations.map(loc => 
-        `<option value="${loc.id}">${loc.name} (${loc.region})</option>`
-      ).join("");
+    function filterTable() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      const filtered = rawData.filter(row => row.some(cell => String(cell).toLowerCase().includes(query)));
+      renderTable(filtered);
     }
 
-    let selectedCityId = null;
-
-    function openCityModal(cityId) {
-      selectedCityId = cityId;
-      const city = appData.locations.find(l => l.id === cityId);
-      if(!city) return;
-
-      document.getElementById("modal-city-name").textContent = city.name;
-      document.getElementById("modal-region-name").textContent = city.region;
-      
-      updateRatesList();
-      document.getElementById("city-modal").classList.remove("hidden");
+    function openModal(index) {
+      const row = rawData[index];
+      document.getElementById('edit-row-index').value = index;
+      document.getElementById('edit-ekspedisi').value = row[0] || '';
+      document.getElementById('edit-daerah').value = row[1] || '';
+      document.getElementById('edit-harga').value = row[2] || '';
+      document.getElementById('edit-satuan').value = row[3] || '';
+      document.getElementById('edit-estimasi').value = row[4] || '';
+      document.getElementById('edit-kategori').value = row[6] || '';
+      document.getElementById('edit-modal').classList.remove('hidden');
+      document.getElementById('edit-modal').classList.add('flex');
     }
 
     function closeModal() {
-      document.getElementById("city-modal").classList.add("hidden");
+      document.getElementById('edit-modal').classList.add('hidden');
+      document.getElementById('edit-modal').classList.remove('flex');
     }
 
-    function updateRates() {
-      if(selectedCityId) updateRatesList();
-    }
-
-    function updateRatesList() {
-      const weight = parseFloat(document.getElementById("weight-input").value) || 1;
-      document.getElementById("modal-weight-display").textContent = `Bobot: ${weight} Kg`;
-
-      const container = document.getElementById("rates-list-container");
-      const cityRates = appData.rates.filter(r => r.cityId === selectedCityId);
-
-      if(cityRates.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-8 text-slate-500">
-            <i class="fa-solid fa-box-open text-3xl mb-2"></i>
-            <p class="text-sm">Belum ada data tarif ekspedisi untuk kota ini.</p>
-          </div>`;
-        return;
-      }
-
-      container.innerHTML = cityRates.map(rate => {
-        const total = rate.price * weight;
-        return `
-          <div class="bg-slate-700/50 hover:bg-slate-700 p-4 rounded-xl border border-slate-600 flex justify-between items-center transition">
-            <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-xs">
-                ${rate.courier.substring(0,3).toUpperCase()}
-              </div>
-              <div>
-                <h4 class="font-bold text-white text-sm">${rate.courier}</h4>
-                <p class="text-xs text-slate-400">Layanan: <span class="text-slate-200">${rate.service}</span> • ETA: <span class="text-emerald-400">${rate.eta}</span></p>
-              </div>
-            </div>
-            <div class="text-right">
-              <div class="text-base font-extrabold text-indigo-400">Rp ${total.toLocaleString('id-ID')}</div>
-              <div class="text-[10px] text-slate-400">Rp ${rate.price.toLocaleString('id-ID')} / kg</div>
-            </div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function switchTab(tab) {
-      if(tab === 'map') {
-        document.getElementById("view-map").classList.remove("hidden");
-        document.getElementById("view-manage").classList.add("hidden");
-        document.getElementById("btn-map").className = "px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white transition";
-        document.getElementById("btn-manage").className = "px-4 py-2 text-sm font-semibold rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition";
-      } else {
-        document.getElementById("view-map").classList.add("hidden");
-        document.getElementById("view-manage").classList.remove("hidden");
-        document.getElementById("btn-map").className = "px-4 py-2 text-sm font-semibold rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition";
-        document.getElementById("btn-manage").className = "px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white transition";
-      }
-    }
-
-    function handleSaveLocation(e) {
+    function saveEdit(e) {
       e.preventDefault();
-      const name = document.getElementById("loc-name").value.trim();
-      const region = document.getElementById("loc-region").value.trim();
-      const x = parseInt(document.getElementById("loc-x").value);
-      const y = parseInt(document.getElementById("loc-y").value);
-      const id = name.toLowerCase().replace(/\s+/g, '-');
+      const btn = document.getElementById('save-btn');
+      btn.innerText = "Menyimpan...";
+      btn.disabled = true;
 
-      appData.locations.push({ id, name, region, x, y });
-      saveData();
-      renderMapPins();
-      alert("Lokasi kota berhasil ditambahkan!");
-      e.target.reset();
+      const index = parseInt(document.getElementById('edit-row-index').value);
+      const updatedRow = [
+        document.getElementById('edit-ekspedisi').value,
+        document.getElementById('edit-daerah').value,
+        document.getElementById('edit-harga').value,
+        document.getElementById('edit-satuan').value,
+        document.getElementById('edit-estimasi').value,
+        rawData[index][5] || '',
+        document.getElementById('edit-kategori').value
+      ];
+
+      fetch(API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rowIndex: index, rowData: updatedRow })
+      }).then(() => {
+        rawData[index] = updatedRow;
+        renderTable(rawData);
+        calculateStats(rawData);
+        btn.innerText = "Simpan Perubahan";
+        btn.disabled = false;
+        closeModal();
+      }).catch(err => {
+        alert("Gagal menyimpan data.");
+        btn.innerText = "Simpan Perubahan";
+        btn.disabled = false;
+      });
     }
-
-    function handleSaveRate(e) {
-      e.preventDefault();
-      const cityId = document.getElementById("rate-city").value;
-      const courier = document.getElementById("rate-courier").value.trim();
-      const service = document.getElementById("rate-service").value.trim();
-      const price = parseInt(document.getElementById("rate-price").value);
-      const eta = document.getElementById("rate-eta").value.trim();
-
-      appData.rates.push({ cityId, courier, service, price, eta });
-      saveData();
-      alert("Tarif ekspedisi berhasil ditambahkan!");
-      e.target.reset();
-    }
-
-    renderMapPins();
   </script>
 </body>
 </html>
